@@ -4,6 +4,6 @@ One-page site for KISERAMA Inc. (주식회사 기세등등), an AI vertical-dram
 
 Static HTML/CSS/JS. The hero is a Three.js ring of real episode frames; motion via GSAP ScrollTrigger. No build step — open `index.html` or serve the folder.
 
-- Live: https://crossnam-coding.github.io/kiserama/
+- Live: https://kiserama.com/
 - Fonts: Inter Tight / Inter / Caveat / Nanum Pen Script (Google Fonts), Pretendard (jsDelivr)
 - Frames: YouTube Shorts thumbnails of our own episodes, cropped to 9:16 (`assets/frames/`)
