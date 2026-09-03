@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KISERAMA — AI Vertical Drama Studio, Seoul</title>
+<meta name="description" content="KISERAMA (Kisedeungdeung Co., Ltd.) is a Seoul studio producing serialized vertical drama with generative AI — 115 episode scripts, 873 shots, zero cameras.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KISERAMA — We don't shoot dramas. We generate them.">
+<meta property="og:description" content="AI vertical drama studio in Seoul. 115 scripts · 873 shots · 0 cameras.">
+<meta property="og:url" content="https://crossnam-coding.github.io/kiserama/">
+<meta property="og:image" content="https://crossnam-coding.github.io/kiserama/assets/og.jpg">
+<link rel="canonical" href="https://crossnam-coding.github.io/kiserama/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#06070b">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800;900&family=Inter:wght@400;500;600&family=Caveat:wght@600;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="KISERAMA home"><img src="assets/kiserama-white.png" alt="KISERAMA" width="1232" height="141"></a>
+  <nav class="links">
+    <a href="#works" data-ko="작품">Works</a>
+    <a href="#pipeline" data-ko="파이프라인">Pipeline</a>
+    <a href="#company" data-ko="회사">Company</a>
+    <a href="#contact" data-ko="연락">Contact</a>
+  </nav>
+  <button class="lang" id="lang" type="button" aria-label="Switch language">KO</button>
+</header>
+
+<section class="hero" id="top">
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <p class="eyebrow" data-ko="<span class='bars' aria-hidden='true'></span>AI 세로 드라마 스튜디오 · 서울"><span class="bars" aria-hidden="true"></span>AI vertical drama studio · Seoul</p>
+    <h1 class="h1" data-ko="드라마를<br>찍지 않습니다.<br>생성합니다.">We don't shoot dramas.<br>We generate them.</h1>
+    <p class="lead" data-ko="키세라마는 생성형 AI로 세로 연속극을 쓰고, 캐스팅하고, 렌더링해서 유튜브 쇼츠·릴스·틱톡에 1분 단위로 내보냅니다.">KISERAMA writes, casts and renders serialized vertical drama with generative AI — and ships it to YouTube Shorts, Reels and TikTok, one minute at a time.</p>
+    <p class="hand" data-ko="대본 115편. 카메라 0대.">115 scripts. 0 cameras.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://www.youtube.com/@kiserama/shorts" target="_blank" rel="noopener" data-ko="유튜브에서 보기">Watch on YouTube</a>
+      <a class="btn ghost" href="#pipeline" data-ko="어떻게 만드나">How it's made</a>
+    </div>
+  </div>
+  <div class="scroll-hint" aria-hidden="true"><span></span></div>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>썸 or 갑</span><i></i><span>Some or Boss</span><i></i><span>가면의 가면</span><i></i><span>Mask of the Mask</span><i></i><span>LuNAi</span><i></i><span>Seedance 2.5</span><i></i><span>omni-reference</span><i></i><span>9 : 16</span><i></i><span>1 min / ep</span><i></i><span>Seoul</span><i></i>
+    <span>썸 or 갑</span><i></i><span>Some or Boss</span><i></i><span>가면의 가면</span><i></i><span>Mask of the Mask</span><i></i><span>LuNAi</span><i></i><span>Seedance 2.5</span><i></i><span>omni-reference</span><i></i><span>9 : 16</span><i></i><span>1 min / ep</span><i></i><span>Seoul</span><i></i>
+  </div>
+</div>
+
+<section class="stats" id="numbers">
+  <div class="wrap">
+    <p class="kicker" data-reveal data-ko="<span class='bars' aria-hidden='true'></span>실측 · 2026년 9월 기준"><span class="bars" aria-hidden="true"></span>By the numbers · as of Sept 2026</p>
+    <ul class="stat-grid">
+      <li data-reveal><b class="num" data-count="115">0</b><span data-ko="회차 대본 완성">episode scripts written</span></li>
+      <li data-reveal><b class="num" data-count="873">0</b><span data-ko="제작 컷 분해">shots in production</span></li>
+      <li data-reveal><b class="num" data-count="87" data-suffix=" min">0</b><span data-ko="생성 영상 분량 (5,246초)">of generated footage (5,246 s)</span></li>
+      <li data-reveal><b class="num" data-count="1.1" data-decimals="1" data-suffix="M">0</b><span data-ko="「가면의 가면」 릴스 조회수">views — “Mask of the Mask” on Reels</span></li>
+      <li data-reveal><b class="num">8<em>/</em>29</b><span data-ko="고정 캐릭터 / 배경 (얼굴 유지 파이프라인)">locked characters / sets</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="works" id="works">
+  <div class="wrap">
+    <h2 class="h2" data-reveal data-ko="지금 나가고 있는 작품">What we're shipping</h2>
+    <div class="work-grid">
+      <article class="work" data-reveal>
+        <a class="work-media" href="https://www.youtube.com/@kiserama/shorts" target="_blank" rel="noopener">
+          <img src="assets/frames/Dw_CtWlS1PA.webp" alt="Some or Boss episode 9" loading="lazy" width="360" height="640">
+          <img class="alt" src="assets/frames/G1GFndKvRv0.webp" alt="" loading="lazy" width="360" height="640">
+        </a>
+        <div class="work-body">
+          <p class="tag-row"><span class="tag lime" data-ko="AI 생성">AI-generated</span><span class="tag" data-ko="연재 중">Now airing</span></p>
+          <h3>썸 or 갑 <small>Some or Boss</small></h3>
+          <p data-ko="오피스 로맨스(GL) 75부작. 전편 생성형 AI 로 제작. 유튜브 쇼츠에 12화까지 공개 중.">A 75-episode office romance (GL), produced entirely with generative AI. Twelve episodes live on YouTube Shorts.</p>
+          <a class="arrow" href="https://www.youtube.com/@kiserama/shorts" target="_blank" rel="noopener" data-ko="쇼츠 보기 →">Watch the Shorts →</a>
+        </div>
+      </article>
+
+      <article class="work" data-reveal>
+        <a class="work-media" href="https://www.youtube.com/@kiserama/videos" target="_blank" rel="noopener">
+          <img src="assets/frames/vdMlESCAup4.webp" alt="Mask of the Mask" loading="lazy" width="360" height="640">
+          <img class="alt" src="assets/frames/RZIuvAYk6t0.webp" alt="" loading="lazy" width="360" height="640">
+        </a>
+        <div class="work-body">
+          <p class="tag-row"><span class="tag" data-ko="실사">Live-action</span><span class="tag" data-ko="완결">Completed</span></p>
+          <h3>가면의 가면 <small>Mask of the Mask</small></h3>
+          <p data-ko="재벌가 복수극. 인스타그램 릴스 36편으로 약 110만 조회, 오리지널 OST 3곡 발매.">A chaebol revenge melodrama. 36 Reels drew about 1.1M views on Instagram; three original OST singles released.</p>
+          <a class="arrow" href="https://www.youtube.com/@kiserama/videos" target="_blank" rel="noopener" data-ko="영어 자막판 보기 →">Watch with English subs →</a>
+        </div>
+      </article>
+
+      <article class="work" data-reveal>
+        <div class="work-media wide">
+          <img src="assets/lunai.webp" alt="LuNAi — five AI idol members" loading="lazy" width="1309" height="668">
+        </div>
+        <div class="work-body">
+          <p class="tag-row"><span class="tag blue" data-ko="개발 중">In development</span><span class="tag" data-ko="AI 아이돌">AI idol</span></p>
+          <h3>LuNAi <small>AI virtual idol group</small></h3>
+          <p data-ko="다섯 명의 AI 아이돌과 오리지널 음악. 드라마와 같은 캐릭터 고정 파이프라인 위에서 만듭니다.">Five AI idol members with original music, built on the same character-locking pipeline as our dramas.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="pipeline" id="pipeline">
+  <div class="wrap">
+    <p class="kicker" data-reveal data-ko="<span class='bars' aria-hidden='true'></span>파이프라인"><span class="bars" aria-hidden="true"></span>Pipeline</p>
+    <h2 class="h2" data-reveal data-ko="대본이 들어가면,<br>회차가 나옵니다.">Script in.<br>Episode out.</h2>
+    <div class="steps">
+      <div class="line" aria-hidden="true"><i id="lineFill"></i></div>
+      <article class="step" data-reveal>
+        <span class="n">01</span>
+        <h3 data-ko="대본 → 컷 리스트">Script → shot list</h3>
+        <p data-ko="회차 대본을 타이밍이 붙은 컷으로 분해합니다. 115회차, 873컷, 총 5,246초.">Every episode script is decomposed into timed shots — 873 shots across 115 scripts, 5,246 seconds in total.</p>
+      </article>
+      <article class="step" data-reveal>
+        <span class="n">02</span>
+        <h3 data-ko="캐릭터 고정">Cast lock</h3>
+        <p data-ko="캐릭터 8명·배경 29종을 레퍼런스 엘리먼트로 등록해, 시즌 전체에서 얼굴과 장소가 유지됩니다.">8 characters and 29 sets are registered as reference elements, so faces and places stay consistent across the whole season.</p>
+      </article>
+      <article class="step" data-reveal>
+        <span class="n">03</span>
+        <h3 data-ko="생성">Generate</h3>
+        <p data-ko="Seedance 2.5 omni-reference 로 컷을 렌더링합니다. 다음 단계는 단일 슬롯 소비자 플랜에서 API 병렬 생성으로의 전환.">Shots are rendered with Seedance 2.5 omni-reference. Next step: moving from a single-slot consumer plan to parallel API generation.</p>
+      </article>
+      <article class="step" data-reveal>
+        <span class="n">04</span>
+        <h3 data-ko="조립 · 검수 · 게시">Assemble, QC, publish</h3>
+        <p data-ko="자동 조립·자막·오디오 정규화·품질 검사를 거쳐 쇼츠·릴스·틱톡으로 바로 나갑니다.">Automated assembly, subtitles, audio normalization and quality checks — then straight to Shorts, Reels and TikTok.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="company" id="company">
+  <div class="wrap two">
+    <div>
+      <p class="kicker" data-reveal data-ko="<span class='bars' aria-hidden='true'></span>회사"><span class="bars" aria-hidden="true"></span>Company</p>
+      <h2 class="h2" data-reveal data-ko="주식회사 기세등등">Kisedeungdeung Co., Ltd.</h2>
+      <p class="body" data-reveal data-ko="2025년 9월 서울에서 설립한 콘텐츠 회사입니다. 걸스데이·카라·레인보우 음반에 참여한 20년차 K-pop 프로듀서들이 이끌며, 음반·음악영상물 제작업으로 등록되어 있습니다. KISERAMA 는 주식회사 기세등등의 드라마 브랜드입니다.">A content company founded in Seoul in September 2025, led by producers with twenty years in K-pop production (Girl's Day, KARA, Rainbow credits) and registered as a music &amp; video production business. KISERAMA is the drama brand of 주식회사 기세등등.</p>
+    </div>
+    <dl class="facts" data-reveal>
+      <div><dt data-ko="법인명">Legal name</dt><dd>주식회사 기세등등 · Kisedeungdeung Co., Ltd.</dd></div>
+      <div><dt data-ko="대표이사">CEO</dt><dd data-ko="이진주">Lee Jin-ju</dd></div>
+      <div><dt data-ko="설립">Founded</dt><dd data-ko="2025년 9월 19일">19 September 2025</dd></div>
+      <div><dt data-ko="본점">HQ</dt><dd data-ko="서울특별시 강남구 테헤란로47길 17, 302-비25호">17 Teheran-ro 47-gil, 302-B25, Gangnam-gu, Seoul, Korea</dd></div>
+      <div><dt data-ko="사업자등록번호">Business reg. no.</dt><dd>660-81-03526</dd></div>
+      <div><dt data-ko="등록">Registrations</dt><dd data-ko="음반·음악영상물 제작업 신고 (2025.10) · 중소기업(소상공인) 확인">Music &amp; video production business (2025) · Certified SME</dd></div>
+    </dl>
+  </div>
+</section>
+
+<footer class="foot" id="contact">
+  <div class="wrap">
+    <div class="foot-top" data-reveal>
+      <h2 class="h2" data-ko="같이 만들 이야기가 있나요?">Got a story to generate?</h2>
+      <a class="btn primary big" href="mailto:kiseramaros@gmail.com">kiseramaros@gmail.com</a>
+      <p class="socials">
+        <a href="https://www.youtube.com/@kiserama" target="_blank" rel="noopener">YouTube @kiserama</a>
+        <a href="https://www.instagram.com/kise.rama/" target="_blank" rel="noopener">Instagram @kise.rama</a>
+      </p>
+    </div>
+    <div class="foot-bottom">
+      <img src="assets/kise-white.png" alt="KISE" width="554" height="141">
+      <p>© 2026 Kisedeungdeung Co., Ltd. <span data-ko="KISERAMA 는 주식회사 기세등등의 브랜드입니다.">KISERAMA is a brand of 주식회사 기세등등.</span></p>
+    </div>
+  </div>
+</footer>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>
