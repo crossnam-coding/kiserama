@@ -47,6 +47,12 @@
       <a class="btn ghost" href="#pipeline" data-ko="어떻게 만드나">How it's made</a>
     </div>
   </div>
+  <div class="hud" id="hud" aria-hidden="true">
+    <div class="hud-head"><span data-ko="대본 → 컷">Script → shot</span><b id="hudEp">EP09</b></div>
+    <p class="hud-line" id="hudLine"></p>
+    <div class="hud-bar"><i id="hudBar"></i></div>
+    <div class="hud-foot"><span data-ko="Seedance 2.5 · 생성 중">Seedance 2.5 · generating</span><span class="dot"></span></div>
+  </div>
   <div class="scroll-hint" aria-hidden="true"><span></span></div>
 </section>
 
@@ -118,28 +124,54 @@
   <div class="wrap">
     <p class="kicker" data-reveal data-ko="<span class='bars' aria-hidden='true'></span>파이프라인"><span class="bars" aria-hidden="true"></span>Pipeline</p>
     <h2 class="h2" data-reveal data-ko="대본이 들어가면,<br>회차가 나옵니다.">Script in.<br>Episode out.</h2>
-    <div class="steps">
-      <div class="line" aria-hidden="true"><i id="lineFill"></i></div>
-      <article class="step" data-reveal>
-        <span class="n">01</span>
-        <h3 data-ko="대본 → 컷 리스트">Script → shot list</h3>
-        <p data-ko="회차 대본을 타이밍이 붙은 컷으로 분해합니다. 115회차, 873컷, 총 5,246초.">Every episode script is decomposed into timed shots — 873 shots across 115 scripts, 5,246 seconds in total.</p>
-      </article>
-      <article class="step" data-reveal>
-        <span class="n">02</span>
-        <h3 data-ko="캐릭터 고정">Cast lock</h3>
-        <p data-ko="캐릭터 8명·배경 29종을 레퍼런스 엘리먼트로 등록해, 시즌 전체에서 얼굴과 장소가 유지됩니다.">8 characters and 29 sets are registered as reference elements, so faces and places stay consistent across the whole season.</p>
-      </article>
-      <article class="step" data-reveal>
-        <span class="n">03</span>
-        <h3 data-ko="생성">Generate</h3>
-        <p data-ko="Seedance 2.5 omni-reference 로 컷을 렌더링합니다. 다음 단계는 단일 슬롯 소비자 플랜에서 API 병렬 생성으로의 전환.">Shots are rendered with Seedance 2.5 omni-reference. Next step: moving from a single-slot consumer plan to parallel API generation.</p>
-      </article>
-      <article class="step" data-reveal>
-        <span class="n">04</span>
-        <h3 data-ko="조립 · 검수 · 게시">Assemble, QC, publish</h3>
-        <p data-ko="자동 조립·자막·오디오 정규화·품질 검사를 거쳐 쇼츠·릴스·틱톡으로 바로 나갑니다.">Automated assembly, subtitles, audio normalization and quality checks — then straight to Shorts, Reels and TikTok.</p>
-      </article>
+  </div>
+  <div class="story" id="story">
+    <div class="wrap story-grid">
+      <div class="stage" aria-hidden="true">
+        <div class="card script" id="cardScript">
+          <div class="card-head"><span data-ko="대본">Script</span><span>썸 or 갑 · EP09</span></div>
+          <p class="sl meta">SHOT · 9:16 · 4.0s</p>
+          <p class="sl" data-ko="“우리가 됐어!”">“We got it!”</p>
+          <p class="sl" data-ko="“— 안 해요.”">“— I'm not doing it.”</p>
+          <p class="sl note" data-ko="1년 매출짜리 계약을 걷어찬 이유">Contract rejection scene</p>
+          <p class="sl meta" data-ko="캐릭터 02 · 배경 07 · 얼굴 고정">Character 02 · Set 07 · face locked</p>
+        </div>
+        <div class="card frame" id="cardFrame">
+          <img src="assets/clips/Dw_CtWlS1PA.webp" alt="" width="360" height="640">
+          <video src="assets/clips/Dw_CtWlS1PA.mp4" muted loop playsinline preload="none"></video>
+          <div class="lockbox"><span class="lock-tag" data-ko="캐릭터 02 · 고정">Character 02 · locked</span></div>
+          <div class="noise"></div>
+          <div class="gen"><i></i><b>Seedance 2.5 · omni-reference</b></div>
+        </div>
+        <div class="phone" id="phone">
+          <span class="ph-top">Shorts</span>
+          <span class="ph-side"><i>♡</i><i>💬</i><i>↗</i></span>
+          <span class="ph-cap"><b>@kiserama</b>썸 or 갑 · EP.09</span>
+          <span class="ph-home"></span>
+        </div>
+      </div>
+      <ol class="steps">
+        <li class="step on">
+          <span class="n">01</span>
+          <h3 data-ko="대본 → 컷 리스트">Script → shot list</h3>
+          <p data-ko="회차 대본을 타이밍이 붙은 컷으로 분해합니다. 115회차, 873컷, 총 5,246초.">Every episode script is decomposed into timed shots — 873 shots across 115 scripts, 5,246 seconds in total.</p>
+        </li>
+        <li class="step">
+          <span class="n">02</span>
+          <h3 data-ko="캐릭터 고정">Cast lock</h3>
+          <p data-ko="캐릭터 8명·배경 29종을 레퍼런스 엘리먼트로 등록해, 시즌 전체에서 얼굴과 장소가 유지됩니다.">8 characters and 29 sets are registered as reference elements, so faces and places stay consistent across the whole season.</p>
+        </li>
+        <li class="step">
+          <span class="n">03</span>
+          <h3 data-ko="생성">Generate</h3>
+          <p data-ko="Seedance 2.5 omni-reference 로 컷을 렌더링합니다. 다음 단계는 단일 슬롯 소비자 플랜에서 API 병렬 생성으로의 전환.">Shots are rendered with Seedance 2.5 omni-reference. Next step: moving from a single-slot consumer plan to parallel API generation.</p>
+        </li>
+        <li class="step">
+          <span class="n">04</span>
+          <h3 data-ko="조립 · 검수 · 게시">Assemble, QC, publish</h3>
+          <p data-ko="자동 조립·자막·오디오 정규화·품질 검사를 거쳐 쇼츠·릴스·틱톡으로 바로 나갑니다.">Automated assembly, subtitles, audio normalization and quality checks — then straight to Shorts, Reels and TikTok.</p>
+        </li>
+      </ol>
     </div>
   </div>
 </section>
@@ -179,6 +211,7 @@
   </div>
 </footer>
 
+<div class="cursor" id="cursor" aria-hidden="true"><i></i></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
