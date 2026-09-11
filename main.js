@@ -359,3 +359,44 @@ if (window.gsap && window.ScrollTrigger) {
   });
   stepsEls.forEach(s => s.classList.add('on'));
 }
+
+/* ---------- character-sheet lightbox ---------- */
+{
+  const box = document.getElementById('sheetbox');
+  const img = document.getElementById('sheetboxImg');
+  const cap = document.getElementById('sheetboxCap');
+  const closeBtn = document.getElementById('sheetboxClose');
+  const triggers = document.querySelectorAll('.artist-shot[data-sheet]');
+  if (box && img && triggers.length) {
+    let opener = null;
+    const capOf = btn => (document.documentElement.lang === 'ko' ? btn.dataset.sheetKo : btn.dataset.sheetEn) || '';
+
+    const open = btn => {
+      opener = btn;
+      img.src = btn.dataset.sheet;
+      img.alt = capOf(btn);
+      cap.textContent = capOf(btn);
+      box.hidden = false;
+      requestAnimationFrame(() => box.classList.add('on'));
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    };
+    const close = () => {
+      box.classList.remove('on');
+      document.body.style.overflow = '';
+      const done = () => { box.hidden = true; img.src = ''; box.removeEventListener('transitionend', done); };
+      box.addEventListener('transitionend', done);
+      setTimeout(done, 400);                 // transition 이 안 뜨는 경우 대비
+      if (opener) { opener.focus(); opener = null; }
+    };
+
+    triggers.forEach(btn => btn.addEventListener('click', () => open(btn)));
+    closeBtn.addEventListener('click', close);
+    box.addEventListener('click', e => { if (e.target === box || e.target.tagName === 'FIGURE') close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !box.hidden) close(); });
+    // 라이트박스가 열린 채로 언어를 바꾸면 캡션도 따라간다
+    document.getElementById('lang')?.addEventListener('click', () => {
+      if (!box.hidden && opener) { const t = capOf(opener); cap.textContent = t; img.alt = t; }
+    });
+  }
+}
