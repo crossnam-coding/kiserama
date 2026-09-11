@@ -274,6 +274,7 @@ body.has-cursor, body.has-cursor a, body.has-cursor button{cursor:none}
   text-transform:uppercase;color:var(--muted);padding-top:4px;white-space:nowrap}
 .spec dd{margin:0;font-size:15px;color:#dfe3ea}
 .spec dd.hl{color:var(--orange);font-weight:600}
+.spec dd.multi{display:grid;gap:6px}
 a.work-link{border-bottom:1px solid var(--line);transition:color .2s,border-color .2s}
 a.work-link::after{content:"\2197";margin-left:6px;font-size:11px;color:var(--muted)}
 a.work-link:hover,a.work-link:focus-visible{color:var(--lime);border-color:var(--lime)}
