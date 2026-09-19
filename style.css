@@ -306,3 +306,8 @@ a.work-link:hover,a.work-link:focus-visible{color:var(--lime);border-color:var(-
   border:1px solid var(--line);border-radius:999px;cursor:pointer;transition:background .2s,border-color .2s}
 .sheetbox-close:hover{background:rgba(255,255,255,.12);border-color:var(--lime)}
 @media(prefers-reduced-motion:reduce){.artist-shot img,.cast-cue,.sheetbox{transition:none}}
+
+/* 2026-09-20 푸터 법적고지 링크 */
+.foot-bottom .legal{margin-top:10px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.foot-bottom .legal a{color:#8c93a0;text-decoration:none;font-size:13px}
+.foot-bottom .legal a:hover{color:#e9e9ee;text-decoration:underline}
