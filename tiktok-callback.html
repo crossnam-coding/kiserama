@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TikTok 인증 코드</title>
+<style>
+ :root{--bg:#0b0b0d;--fg:#e9e9ee;--dim:#9aa0ab;--line:#26262c;--acc:#ff4d6d;--ok:#3ad07a}
+ *{box-sizing:border-box}
+ body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);display:flex;
+   align-items:center;justify-content:center;padding:24px;
+   font:16px/1.6 -apple-system,system-ui,"Apple SD Gothic Neo",sans-serif}
+ .card{width:100%;max-width:640px;border:1px solid var(--line);border-radius:16px;
+   background:#111116;padding:28px}
+ h1{font-size:19px;margin:0 0 4px}
+ .sub{color:var(--dim);font-size:14px;margin:0 0 22px}
+ code{display:block;background:#08080a;border:1px solid var(--line);border-radius:10px;
+   padding:16px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+   word-break:break-all;color:#fff;margin-bottom:14px}
+ button{width:100%;padding:14px;border:0;border-radius:10px;background:var(--acc);
+   color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+ button:disabled{background:var(--ok)}
+ .next{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);
+   color:var(--dim);font-size:13.5px}
+ .next b{color:var(--fg)}
+ .err{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>TikTok 인증 코드</h1>
+  <p class="sub" id="sub">아래 코드를 복사해서 터미널에 붙여넣으세요.</p>
+  <code id="code">…</code>
+  <button id="btn">코드 복사</button>
+  <div class="next">
+    다음 단계 —<br>
+    <b>python3 ~/온혁_채널/tools/틱톡정식.py 인증완료 &lt;복사한 코드&gt;</b>
+  </div>
+</div>
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  var code = p.get('code'), err = p.get('error');
+  var el = document.getElementById('code'), btn = document.getElementById('btn');
+  if (err) {
+    el.textContent = err + (p.get('error_description') ? ' — ' + p.get('error_description') : '');
+    el.className = 'err';
+    document.getElementById('sub').textContent = '인증이 거부되었거나 실패했습니다.';
+    btn.style.display = 'none';
+    return;
+  }
+  if (!code) {
+    el.textContent = '코드가 없습니다. 인증 링크를 다시 열어 주세요.';
+    btn.style.display = 'none';
+    return;
+  }
+  el.textContent = code;
+  btn.addEventListener('click', function(){
+    navigator.clipboard.writeText(code).then(function(){
+      btn.textContent = '복사됨 ✓'; btn.disabled = true;
+    }).catch(function(){
+      var r = document.createRange(); r.selectNode(el);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = '직접 복사하세요 (선택됨)';
+    });
+  });
+})();
+</script>
+</body>
+</html>
