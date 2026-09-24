@@ -346,9 +346,6 @@ a.work-link:hover,a.work-link:focus-visible{color:var(--lime);border-color:var(-
   .member:nth-child(3){width:calc(50% - 7px)}
 }
 
-/* works: GLINK 카드 — 가로 전체 배너(5인 단체 이미지 그대로, 확대 없음) */
-.work-glink{grid-column:1/-1}
-.work-glink .work-media{aspect-ratio:5/1}
+/* works: GLINK 카드 — 다른 작품과 같은 한 칸(4:5). 카드 사진은 자르지 않고 배치만(센터 미오 크게 + 넷) */
 .work-glink .work-media:hover img{transform:none}
-.work-glink .work-body p{max-width:72ch}
 .spec dd .song-note{color:var(--muted);font-size:13.5px;line-height:1.6}
