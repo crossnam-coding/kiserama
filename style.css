@@ -311,3 +311,44 @@ a.work-link:hover,a.work-link:focus-visible{color:var(--lime);border-color:var(-
 .foot-bottom .legal{margin-top:10px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
 .foot-bottom .legal a{color:#8c93a0;text-decoration:none;font-size:13px}
 .foot-bottom .legal a:hover{color:#e9e9ee;text-decoration:underline}
+
+/* ---------- GLINK (AI girl group, inside #cast) ---------- */
+.group{margin-top:clamp(64px,9vw,120px);padding-top:clamp(44px,6vw,72px);border-top:1px solid var(--line);scroll-margin-top:84px}
+.group-title{margin:0 0 26px;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 20px;font-family:var(--font-en);
+  font-weight:800;font-size:clamp(48px,7vw,104px);line-height:.92;letter-spacing:-.04em}
+.group-title small{font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.group .ai-badge{margin:0 0 22px}
+.group-lead{margin:0 0 30px;max-width:40ch;font-size:clamp(18px,2vw,23px);font-weight:600;line-height:1.5;color:var(--fg)}
+.group-facts{display:flex;flex-wrap:wrap;gap:14px clamp(28px,4vw,56px);margin:0 0 clamp(36px,5vw,56px);padding:18px 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.group-facts dt{margin:0 0 6px;font-family:var(--font-en);font-weight:600;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.group-facts dd{margin:0;font-size:15px;color:#dfe3ea}
+
+.members{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(14px,1.8vw,24px)}
+.member{min-width:0;display:flex;flex-direction:column;gap:8px}
+.member-shot{margin:0 0 8px;aspect-ratio:1/1;overflow:hidden;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+/* 카드는 오빠가 얼굴 크기·눈높이를 맞춘 원본 그대로 — 확대·재크롭 금지(정렬이 깨진다) */
+.member-shot img{display:block;width:100%;height:100%;object-fit:cover}
+.member-pos{margin:0;font-family:var(--font-en);font-weight:600;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}
+.member-name{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;line-height:1.05}
+.member-name span{font-family:var(--font-en);font-weight:800;font-size:clamp(22px,2.1vw,28px);letter-spacing:-.01em}
+.member-name small{font-size:13px;font-weight:400;color:var(--muted)}
+.member-mean{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.member-note{margin:0;font-size:14.5px;line-height:1.65;color:#c9cdd6}
+/* 센터(미오)는 좁은 화면에서도 가운데: 2 · 1 · 2 배치 */
+@media(max-width:1000px){
+  .members{grid-template-columns:1fr 1fr;gap:18px;max-width:620px}
+  .member:nth-child(3){grid-column:1/-1;justify-self:center;width:calc(50% - 9px)}
+}
+@media(max-width:640px){
+  .members{gap:14px;max-width:none}
+  .member:nth-child(3){width:calc(50% - 7px)}
+}
+
+/* works: GLINK 카드 — 가로 전체 배너(5인 단체 이미지 그대로, 확대 없음) */
+.work-glink{grid-column:1/-1}
+.work-glink .work-media{aspect-ratio:5/1}
+.work-glink .work-media:hover img{transform:none}
+.work-glink .work-body p{max-width:72ch}
+.spec dd .song-note{color:var(--muted);font-size:13.5px;line-height:1.6}
