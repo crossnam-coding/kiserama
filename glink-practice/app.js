@@ -22,7 +22,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => "timeout")]);
 const waitMeta = (v, ms = 5000) => withTimeout(new Promise(r => v.readyState >= 1 ? r() : v.addEventListener("loadedmetadata", r, { once: true })), ms);
 
-const GC = "";   // 🔴 GoatCounter 코드 이름(예: "glink") — 오빠가 goatcounter.com 에서 만들면 채운다. 비어 있으면 아무것도 안 보낸다
+const GC = "crossnam";   // GoatCounter 계정(오빠 11-02 가입 · https://crossnam.goatcounter.com) · 비우면 아무것도 안 보낸다
 // 사용 지표 (오빠 11-02 «신청 안 해도 이용률·머무는 시간·들어오는 횟수를 알 수 있게»)
 // GoatCounter 에 «경로» 하나씩 보낸다: /glink-practice/e/<사건>/<세부> — 이름·영상·점수 없음 · 쿠키 없음
 // 지표 사전 = 따라하기_시험판/지표사전.md
