@@ -724,6 +724,8 @@ $("spGo").onclick = () => {
   openGuide();
 };
 $("spGuide").onclick = openGuide;
+{ const a = $("spApply"), link = CTA_URL ? CTA_URL + encodeURIComponent(`baro_${firstTouch()}`) : "";   // 첫 화면 «바로 신청» (예습 안 거친 신청 = baro_)
+  if (link) { a.href = link; a.onclick = () => ping("cta_splash"); } else a.hidden = true; }
 $("go").onclick = () => {   // 같은 누름으로 소리·카메라 허락까지
   $("guide").hidden = true; guided = true; try { localStorage.setItem("glink_guided", "1"); } catch {}
   ping("open_go"); $("start").onclick();
@@ -781,7 +783,7 @@ async function init() {
   msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "«시작»을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
   if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
   ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
-  if (guided) { $("spGuide").hidden = false; $("spGo").textContent = done.size ? "이어서 하기" : "시작하기"; }
+  if (guided) { $("spGuide").hidden = false; $("spGo").textContent = done.size ? "예습 이어서 하기" : "예습 먼저 해 보기"; }
   requestAnimationFrame(loop);
 }
 init().catch(e => { msg("불러오기에 실패했어요. 새로고침해 주세요. (" + e.message + ")"); $("go").textContent = "불러오기 실패 · 새로고침해 주세요"; console.error(e); });
