@@ -8,7 +8,6 @@ import { PoseLandmarker, FilesetResolver } from "./vendor/vision_bundle.mjs";
 const CTA_URL = "";
 const CTA_CODE = "yeseup";
 // 사용 단계 세기: 같은 서버의 ping.txt 를 부르면 호스팅 접속 기록에 «시작·완주» 같은 단계만 남는다(영상·이름 없음)
-const PING = "";   // GitHub Pages(kiserama.com)는 접속 기록을 우리가 볼 수 없다 → 세는 도구를 정할 때까지 끔
 
 const Q = new URLSearchParams(location.search);
 const DEV = Q.has("dev"), DEMO = Q.has("demo"), DEMO_HEART = Q.get("demo") === "heart";
@@ -23,9 +22,13 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => "timeout")]);
 const waitMeta = (v, ms = 5000) => withTimeout(new Promise(r => v.readyState >= 1 ? r() : v.addEventListener("loadedmetadata", r, { once: true })), ms);
 
+const GC = "";   // 🔴 GoatCounter 코드 이름(예: "glink") — 오빠가 goatcounter.com 에서 만들면 채운다. 비어 있으면 아무것도 안 보낸다
 function ping(e, extra = "") {
-  if (DEV || DEMO || !PING) return;
-  try { fetch(`${PING}?e=${encodeURIComponent(e)}&s=${encodeURIComponent(firstTouch())}${extra}&r=${Math.random().toString(36).slice(2, 8)}`, { cache: "no-store", keepalive: true }).catch(() => {}); } catch {}
+  if (DEV || DEMO || !GC) return;
+  try {   // 단계 이름 + 들어온 경로만 (이름·영상·점수 없음) · 이미지 한 장 요청 방식(스크립트 안 불러옴)
+    const p = `/glink-practice/${e}${extra ? "/" + extra.replace(/^&i=/, "") : ""}`;
+    new Image().src = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+  } catch {}
 }
 // 첫 유입(utm_source)을 이 폰에 한 번만 기록해 둔다 → 신청 링크 코드에 붙여 «어디서 와서 신청했나»를 센다
 function firstTouch() {
@@ -407,7 +410,7 @@ function estimateMinutes() {   // 안내용: 전체 코스 대략 몇 분
 }
 
 // ── 녹화 · 다시 보기 · 저장 ──────────────────────────────────────────
-let rec = null, recChunks = [], lastRec = null, lastClip = null;
+let rec = null, recChunks = [], lastRec = null, lastClip = null, lastRecBlob = null;
 const pickType = () => ["video/mp4", "video/webm;codecs=vp9", "video/webm"].find(t => window.MediaRecorder?.isTypeSupported?.(t));
 function startRec() {
   if (!camStream || !window.MediaRecorder) return;
@@ -417,7 +420,7 @@ function stopRec() {
   return new Promise(res => {
     if (!rec || rec.state === "inactive") return res(null);
     const r = rec; rec = null;
-    r.onstop = () => { const url = recChunks.length ? URL.createObjectURL(new Blob(recChunks, { type: r.mimeType || "video/mp4" })) : null; recChunks = []; res(url); };
+    r.onstop = () => { const blob = recChunks.length ? new Blob(recChunks, { type: r.mimeType || "video/mp4" }) : null; lastRecBlob = blob; const url = blob ? URL.createObjectURL(blob) : null; recChunks = []; res(url); };
     try { r.stop(); } catch { res(null); }
   });
 }
@@ -490,32 +493,32 @@ async function replayAttempt(a, b, speed, url, compose, myGen) {
   }
   return true;
 }
-function offerSave(blob, label) {
+// 영상 하나 저장·공유 버튼 연결 (공유 창 → 안 되면 «파일로 저장» 링크 + 미리보기)
+function wireSave(btn, dl, blob, name, evName) {
+  const ext = (blob.type || "").includes("mp4") ? "mp4" : "webm";
+  const file = new File([blob], `${name}.${ext}`, { type: blob.type }), url = URL.createObjectURL(blob);
+  dl.href = url; dl.download = file.name; dl.hidden = false; dl.onclick = () => ping(evName + "_file");
+  btn.hidden = false;
+  btn.onclick = async () => {
+    ping(evName);
+    try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e?.name === "AbortError") return; }
+    const vid = $("saveVideo"); vid.src = url; vid.hidden = false; vid.muted = false; $("saveHint").hidden = false; vid.play().catch(() => {});
+  };
+  return url;
+}
+function offerSave(blob, label, mine) {
   return new Promise(res => {
-    const box = $("savebox"), vid = $("saveVideo"), dl = $("dlBtn");
-    vid.hidden = true; $("saveHint").hidden = true; dl.hidden = true;
+    const box = $("savebox"), vid = $("saveVideo");
+    vid.hidden = true; $("saveHint").hidden = true;
+    ["saveBtn", "dlBtn", "saveMeBtn", "dlMeBtn"].forEach(id => $(id).hidden = true);
     const link = CTA_URL ? CTA_URL + encodeURIComponent(`${CTA_CODE}_${firstTouch()}`) : "";
     $("ctaBtn").hidden = !link; if (link) { $("ctaBtn").href = link; $("ctaBtn").target = "_blank"; $("ctaBtn").onclick = () => ping("cta"); }
-    let url = null;
-    if (blob) {
-      const ext = (blob.type || "").includes("mp4") ? "mp4" : "webm";
-      const file = new File([blob], `GLINK_따라추기_${label.replace(/\s/g, "")}.${ext}`, { type: blob.type });
-      url = URL.createObjectURL(blob); vid.src = url; dl.href = url; dl.download = file.name; dl.hidden = false; dl.onclick = () => ping("save_file");
-      $("saveText").textContent = "방금 춘 후렴 전체(위 선생님 · 아래 나)를 내 폰에 저장할 수 있어요.";
-      $("saveBtn").hidden = false;
-      $("saveBtn").onclick = async () => {
-        ping("save");
-        try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); return; } }
-        catch (e) { if (e?.name === "AbortError") return; }
-        // 공유 창을 못 띄우면 «파일로 저장» 링크(아이폰은 파일 앱 › 다운로드에 저장된다) + 미리보기
-        dl.hidden = false; vid.hidden = false; vid.muted = false; $("saveHint").hidden = false; vid.play().catch(() => {});
-      };
-    } else {
-      $("saveText").textContent = "후렴 전체 통과! 내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.";
-      $("saveBtn").hidden = true;
-    }
+    const urls = [];
+    if (blob) urls.push(wireSave($("saveBtn"), $("dlBtn"), blob, `GLINK_따라추기_${label.replace(/\s/g, "")}`, "save"));
+    if (mine) urls.push(wireSave($("saveMeBtn"), $("dlMeBtn"), mine, "GLINK_따라추기_내춤", "save_me"));
+    $("saveText").textContent = blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "후렴 전체 통과! 내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.";
     box.hidden = false;
-    $("nextBtn").onclick = () => { box.hidden = true; vid.removeAttribute("src"); vid.load(); if (url) URL.revokeObjectURL(url); res(); };
+    $("nextBtn").onclick = () => { box.hidden = true; vid.removeAttribute("src"); vid.load(); urls.forEach(u => URL.revokeObjectURL(u)); res(); };
     ev("savebox");
   });
 }
@@ -595,7 +598,8 @@ async function runItem(myGen, testOut = false) {
           if (testOut) lastClip = null;
           // 완주 기록을 먼저 남기고(신청·공유로 다른 앱에 다녀와도 안 날아가게) 카메라를 끈 뒤 완주 카드
           closeCamera(); teacher.pause(); setStage("후렴 완주! 💃");
-          await offerSave(lastClip, "후렴전체");
+          const mine = testOut ? null : lastRecBlob; lastRecBlob = null;
+          await offerSave(lastClip, "후렴전체", mine);
         }
         lastClip = null;
         break;

@@ -122,6 +122,7 @@ body.replaying #stopFab{background:#000d}
 .gd-nav{display:flex;gap:10px}
 .gd-nav button{flex:1;padding:13px;font-size:16px}
 #go{width:100%;padding:14px;font-size:17px}
+.card a.dl{font-size:13px;color:var(--dim);text-align:center;text-decoration:underline;padding:2px}
 #saveVideo{width:100%;border-radius:10px;background:#000;max-height:40vh}
 </style>
 </head>
@@ -234,8 +235,10 @@ body.replaying #stopFab{background:#000d}
     <p id="saveText">방금 춘 후렴 전체(위 선생님 · 아래 나)를 내 폰에 저장할 수 있어요.</p>
     <video id="saveVideo" playsinline controls muted hidden></video>
     <p class="note" id="saveHint" hidden>«파일로 저장»을 누르면 파일 앱 › 다운로드에 저장돼요. 파일 앱에서 열어 공유 → «동영상 저장»을 누르면 사진첩으로 가요.</p>
-    <a id="dlBtn" hidden><button style="width:100%">파일로 저장</button></a>
-    <button class="pri" id="saveBtn">내 영상 저장·공유</button>
+        <button class="pri" id="saveMeBtn" hidden>내 춤만 저장·공유</button>
+    <a id="dlMeBtn" hidden class="dl">내 춤만 · 파일로 저장</a>
+    <button class="pri" id="saveBtn">선생님과 같이 저장·공유</button>
+    <a id="dlBtn" hidden class="dl">선생님과 같이 · 파일로 저장</a>
     <a id="ctaBtn" hidden><button style="width:100%">수업 신청하러 가기</button></a>
     <button id="nextBtn">마치기</button>
   </div>
@@ -258,6 +261,6 @@ body.replaying #stopFab{background:#000d}
   <span class="dev"><button id="skip">건너뛰기</button></span>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=40"></script>
+<script type="module" src="app.js?v=41"></script>
 </body>
 </html>
