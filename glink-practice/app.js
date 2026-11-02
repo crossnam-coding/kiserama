@@ -4,8 +4,8 @@ import { PoseLandmarker, FilesetResolver } from "./vendor/vision_bundle.mjs";
 
 // ── 설정 ─────────────────────────────────────────────────────────────
 // 완주 화면의 «수업 신청하러 가기» — 비워 두면 버튼을 숨긴다. 링크 코드(entry.565880711)로 «예습에서 온 신청»을 센다.
-// 🔴 원데이 클래스(확정 11)는 접었다 → 새 신청 주소를 오빠가 정하면 채운다. 예: 구글 폼 미리 채움 주소 + «링크 코드» 칸(entry.565880711=)
-const CTA_URL = "";
+// 11/10 현장 클래스 신청서(오빠 11-02 «그날 애들이 많으면 현장 클래스는 그대로 진행») · «링크 코드» 칸(entry.565880711)에 yeseup_<들어온 경로> 가 자동으로 들어간다
+const CTA_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeTPyR3wnyno11PzGgsAfQYGzAqzRbgLR-yP4yyPpoWJLBNtA/viewform?usp=pp_url&entry.565880711=";
 const CTA_CODE = "yeseup";
 // 사용 단계 세기: 같은 서버의 ping.txt 를 부르면 호스팅 접속 기록에 «시작·완주» 같은 단계만 남는다(영상·이름 없음)
 
@@ -23,13 +23,31 @@ const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => "timeout")]
 const waitMeta = (v, ms = 5000) => withTimeout(new Promise(r => v.readyState >= 1 ? r() : v.addEventListener("loadedmetadata", r, { once: true })), ms);
 
 const GC = "";   // 🔴 GoatCounter 코드 이름(예: "glink") — 오빠가 goatcounter.com 에서 만들면 채운다. 비어 있으면 아무것도 안 보낸다
-function ping(e, extra = "") {
+// 사용 지표 (오빠 11-02 «신청 안 해도 이용률·머무는 시간·들어오는 횟수를 알 수 있게»)
+// GoatCounter 에 «경로» 하나씩 보낸다: /glink-practice/e/<사건>/<세부> — 이름·영상·점수 없음 · 쿠키 없음
+// 지표 사전 = 따라하기_시험판/지표사전.md
+function ping(e, sub = "") {
   if (DEV || DEMO || !GC) return;
-  try {   // 단계 이름 + 들어온 경로만 (이름·영상·점수 없음) · 이미지 한 장 요청 방식(스크립트 안 불러옴)
-    const p = `/glink-practice/${e}${extra ? "/" + extra.replace(/^&i=/, "") : ""}`;
-    new Image().src = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    const p = `/glink-practice/e/${e}${sub ? "/" + String(sub).replace(/[^\w가-힣~.-]/g, "_") : ""}`;
+    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+    fetch(url, { mode: "no-cors", keepalive: true, cache: "no-store" }).catch(() => { new Image().src = url; });
   } catch {}
 }
+const bucketMin = (ms) => { const m = ms / 60000; return m < 1 ? "0-1m" : m < 3 ? "1-3m" : m < 10 ? "3-10m" : m < 20 ? "10-20m" : m < 40 ? "20-40m" : "40m+"; };
+// 몇 번째 방문인지(이 폰 기준) · 머문 시간 · 실제로 춘 시간
+let visitNo = 1; try { visitNo = (+localStorage.getItem("glink_visits") || 0) + 1; localStorage.setItem("glink_visits", String(visitNo)); } catch {}
+const T_OPEN = performance.now(); let practiceMs = 0, practiceFrom = 0, leftSent = false;
+const practiceOn = () => { if (!practiceFrom) practiceFrom = performance.now(); };
+const practiceOff = () => { if (practiceFrom) { practiceMs += performance.now() - practiceFrom; practiceFrom = 0; } };
+function sendLeave() {
+  if (leftSent) return; leftSent = true; practiceOff();
+  ping("stay", bucketMin(performance.now() - T_OPEN));      // 머문 시간
+  ping("practice", bucketMin(practiceMs));                 // 실제로 연습한 시간(카메라 켜고 도는 동안)
+  ping("reach", `${frontier()}of${plan.length}`);           // 어디까지 열었나
+}
+window.addEventListener("pagehide", sendLeave);
+document.addEventListener("visibilitychange", () => { if (document.hidden) sendLeave(); else leftSent = false; });
 // 첫 유입(utm_source)을 이 폰에 한 번만 기록해 둔다 → 신청 링크 코드에 붙여 «어디서 와서 신청했나»를 센다
 function firstTouch() {
   try {
@@ -497,7 +515,7 @@ async function replayAttempt(a, b, speed, url, compose, myGen) {
 function wireSave(btn, dl, blob, name, evName) {
   const ext = (blob.type || "").includes("mp4") ? "mp4" : "webm";
   const file = new File([blob], `${name}.${ext}`, { type: blob.type }), url = URL.createObjectURL(blob);
-  dl.href = url; dl.download = file.name; dl.hidden = false; dl.onclick = () => ping(evName + "_file");
+  dl.href = url; dl.download = file.name; dl.hidden = false; dl.onclick = () => ping(evName, "file");
   btn.hidden = false;
   btn.onclick = async () => {
     ping(evName);
@@ -585,7 +603,7 @@ async function runItem(myGen, testOut = false) {
         const lastRung = st === ladder[ladder.length - 1];
         if (lastRung) {   // 마지막 단계 통과 = 이 칸 완료 · 알리는 순간 저장
           if (testOut) for (let q = 0; q <= cur; q++) done.add(q); else done.add(cur);
-          saveDone(); drawSteps(); ping("step", `&i=${encodeURIComponent(it.label)}`);
+          saveDone(); drawSteps(); ping("step", it.label);
           if (it.label === "전체" || DEMO_HEART) ping("finish");
         }
         await big(st.last ? "다 익혔어! 🎉" : "좋아요! 👍", 1100);
@@ -607,6 +625,7 @@ async function runItem(myGen, testOut = false) {
       dropRec();
       if (testOut) { await big(`아직이야 · ${Math.round(avg)}점`, 1500); return false; }
       await big(size < 0.35 ? `조금 더 크게! (움직임 ${Math.round(size * 100)}%)` : `다시! ${Math.round(avg)}점`, 1500);
+      if (tries === 3) ping("stuck", `${it.label}-${st.focus}-${st.speed}`);
       if (tries === 3) await big("어려우면 «멈춤» → 아래 «반»을 쉬움반으로 바꿔도 돼요", 2200);
     }
     if (!running || myGen !== gen) return;
@@ -617,17 +636,17 @@ async function runItem(myGen, testOut = false) {
 // ── 시작 · 멈춤 ──────────────────────────────────────────────────────
 let wakeLock = null;
 async function beginRun() {
-  document.body.classList.add("playing"); running = true; const myGen = ++gen;
+  document.body.classList.add("playing"); running = true; const myGen = ++gen; practiceOn();
   try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
   setStage("카메라 켜는 중…");
   const ok = await setSource(myGen);
   if (myGen !== gen || !running) { if (!running) closeCamera(); return null; }
-  if (!ok) { const m = camFailMessage(); endRun(m); showFail(m); return null; }
+  if (!ok) { ping("cam_fail", camErr || "unknown"); const m = camFailMessage(); endRun(m); showFail(m); return null; }
   if (!(await placeCheck(myGen))) return null;
   return myGen;
 }
 function endRun(text) {
-  running = false; gen++; phase = "idle";
+  running = false; gen++; phase = "idle"; practiceOff();
   tapResolve?.(); tapResolve = null;
   teacher.pause(); teacher.style.opacity = 1; clearTeacherCanvas(); dropRec();
   document.body.classList.remove("playing", "replaying"); showMe(true);
@@ -648,13 +667,14 @@ async function placeCheck(myGen) {
   while (running && myGen === gen && placeOk < 1500 && performance.now() - t0 < 25000) await sleep(100);
   document.body.classList.remove("replaying"); showMe(false); $("big").classList.remove("setup"); $("big").textContent = "";
   if (!running || myGen !== gen) return false;
+  ping("setup", placeOk >= 1500 ? "ok" : "timeout");
   await big(placeOk >= 1500 ? "좋아요! 시작해요" : "자리 확인은 건너뛰고 시작해요", 1100);
   phase = "idle";
   return true;
 }
 async function run() {
   const myGen = await beginRun(); if (myGen == null) return;
-  ping("start");
+  ping("start", done.size ? "resume" : "new");
   if (!DEMO && $("src").value === "test-blonde" && cur < 5) { for (let k = 0; k < 5; k++) done.add(k); cur = 5; drawSteps(); }
   while (running && myGen === gen && cur < plan.length) {
     const ok = await runItem(myGen);
@@ -666,7 +686,7 @@ async function run() {
 }
 async function testOut(i) {
   const myGen = await beginRun(); if (myGen == null) return;
-  cur = i; ping("testout", `&i=${encodeURIComponent(plan[i].label)}`);
+  cur = i; ping("testout", plan[i].label);
   const ok = await runItem(myGen, true);
   if (myGen !== gen) return;
   cur = frontier(); endRun(ok ? "통과! 여기까지 열렸어요." : "아직이에요. 앞 스텝부터 차근차근 해 봐요.");
@@ -714,7 +734,7 @@ $("start").onclick = () => {
   if (cur >= plan.length) { cur = frontier(); if (cur >= plan.length) { done.clear(); saveDone(); cur = 0; } }
   unlockMedia(); beep(false); run();
 };
-$("stopFab").onclick = () => endRun("멈췄어요. «이어서»를 누르면 이 스텝부터 다시 해요.");
+$("stopFab").onclick = () => { ping("stop", plan[cur]?.label || ""); endRun("멈췄어요. «이어서»를 누르면 이 스텝부터 다시 해요."); };
 $("reset").onclick = () => { if (running) return; askReset = true; $("confirmTitle").textContent = "진행 기록을 지울까요?"; $("confirmText").textContent = "스텝 1부터 다시 시작해요. 지운 기록은 되돌릴 수 없어요."; $("cYes").textContent = "지우기"; $("confirm").hidden = false; };
 let askReset = false;
 // 스텝 칸: 끝낸 칸·다음 칸은 거기서 시작, 잠긴 칸은 «바로 시험 보기» 확인 후 (오빠 11-02 «1»)
@@ -760,6 +780,7 @@ async function init() {
   $("go").disabled = false; $("go").textContent = "카메라 켜고 시작";
   msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "«시작»을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
   if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
+  ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
   if (guided) { $("spGuide").hidden = false; $("spGo").textContent = done.size ? "이어서 하기" : "시작하기"; }
   requestAnimationFrame(loop);
 }
