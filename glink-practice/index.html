@@ -105,6 +105,7 @@ body.replaying #stopFab{background:#000d}
 .sp-apply{display:flex;align-items:center;justify-content:center;border:2px solid var(--acc);color:var(--acc);border-radius:10px;font-weight:700;text-decoration:none;box-sizing:border-box}
 .sp-class{margin:0;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
 .sp-class b{color:var(--ink)}
+.sp-due{color:var(--acc);font-weight:700}
 .sp-link{background:none;color:var(--dim);text-decoration:underline;padding:6px;font-size:13px}
 .sp-eta{margin:0;color:var(--dim);font-size:12px;text-align:center}
 @media (prefers-reduced-motion: reduce){.sp-bg,.sp-in{animation:none}}
@@ -144,7 +145,7 @@ body.replaying #stopFab{background:#000d}
     <ul class="sp-pts"><li>천천히 보고 · 따라 하고</li><li>맞게 추면 다음 스텝이 열려요</li><li>폰 하나면 돼요 · 영상은 폰 밖으로 안 나가요</li></ul>
     <p class="warn" id="inapp" hidden></p>
     <button id="kakaoOpen" class="pri" hidden>Safari로 열기</button>
-    <p class="sp-class">11/10(화) 20시 · 강남역 · 3만원<br><b>NAYE 현장 클래스</b></p>
+    <p class="sp-class">11/10(화) 20시 · 강남역 · 3만원<br><b>NAYE 현장 클래스</b> · <span class="sp-due">⏰ 11/4(수)까지 신청</span></p>
     <div class="sp-two">
       <button class="pri sp-go" id="spGo">예습 먼저 해 보기</button>
       <a class="sp-go sp-apply" id="spApply" href="#" target="_blank" rel="noopener">바로 신청하기</a>
@@ -270,6 +271,6 @@ body.replaying #stopFab{background:#000d}
   <span class="dev"><button id="skip">건너뛰기</button></span>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=44"></script>
+<script type="module" src="app.js?v=45"></script>
 </body>
 </html>
