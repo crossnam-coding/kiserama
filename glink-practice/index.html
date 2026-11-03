@@ -88,8 +88,9 @@ body.replaying #stopFab{background:#000d}
 /* 오픈 화면 */
 #splash{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center;background:#0e0e12;overflow:hidden}
 #splash[hidden],#guide[hidden]{display:none}
-.sp-bg{position:absolute;inset:0;background:url(splash.jpg) center 20%/cover;opacity:.55;filter:saturate(1.1);animation:spz 9s ease-out both}
+.sp-bg{position:absolute;inset:0;background:url(splash.jpg) center 20%/cover;opacity:.7;filter:saturate(1.1);animation:spz 9s ease-out both}
 .sp-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0e0e1200 30%,#0e0e12e6 70%,#0e0e12 100%)}
+.sp-bg video{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block}
 @keyframes spz{from{transform:scale(1.12)}to{transform:scale(1)}}
 .sp-in{position:relative;width:100%;max-width:440px;padding:24px max(20px,env(safe-area-inset-right)) max(28px,calc(env(safe-area-inset-bottom) + 18px)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:12px;animation:spu .7s .15s ease-out both}
 @keyframes spu{from{transform:translateY(16px)}to{transform:none}}
@@ -106,6 +107,14 @@ body.replaying #stopFab{background:#000d}
 .sp-class{margin:0;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
 .sp-class b{color:var(--ink)}
 .sp-due{color:var(--acc);font-weight:700}
+.sp-go small{display:block;font-size:12px;font-weight:500;opacity:.75}
+/* 먼저 보기 (카메라 없이) */
+#peek{position:fixed;inset:0;z-index:31;background:#000;display:flex;flex-direction:column}
+#peek[hidden]{display:none}
+#peekVid{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
+.pk-in{width:100%;max-width:440px;margin:0 auto;box-sizing:border-box;padding:14px max(16px,env(safe-area-inset-right)) max(18px,calc(env(safe-area-inset-bottom) + 12px)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:10px}
+.pk-t{margin:0;text-align:center;font-weight:700;word-break:keep-all}
+.pk-apply{display:block;text-align:center;background:var(--acc);color:#111;font-weight:700;text-decoration:none;border-radius:10px;padding:14px;font-size:17px}
 .sp-link{background:none;color:var(--dim);text-decoration:underline;padding:6px;font-size:13px}
 .sp-eta{margin:0;color:var(--dim);font-size:12px;text-align:center}
 @media (prefers-reduced-motion: reduce){.sp-bg,.sp-in{animation:none}}
@@ -137,7 +146,7 @@ body.replaying #stopFab{background:#000d}
 
 <!-- 오픈 화면 (앱처럼) -->
 <div id="splash">
-  <div class="sp-bg"></div>
+  <div class="sp-bg"><video id="spVid" src="teacher.mp4?v=2" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video></div>
   <div class="sp-in">
     <div class="sp-brand">GLINK</div>
     <h1 class="sp-title">Glow Connection<br><span>따라 추기</span></h1>
@@ -146,12 +155,24 @@ body.replaying #stopFab{background:#000d}
     <p class="warn" id="inapp" hidden></p>
     <button id="kakaoOpen" class="pri" hidden>Safari로 열기</button>
     <p class="sp-class">11/10(화) 20시 · 강남역 · 3만원<br><b>NAYE 현장 클래스</b> · <span class="sp-due">⏰ 11/4(수)까지 신청</span></p>
+    <button class="pri sp-go" id="spPeek">▶ 안무 먼저 보기<small>카메라 없이 · 30초</small></button>
     <div class="sp-two">
-      <button class="pri sp-go" id="spGo">예습 먼저 해 보기</button>
+      <button class="sp-go" id="spGo">카메라로 따라 추기</button>
       <a class="sp-go sp-apply" id="spApply" href="#" target="_blank" rel="noopener">바로 신청하기</a>
     </div>
     <button class="sp-link" id="spGuide" hidden>설치 가이드 다시 보기</button>
     <p class="sp-eta" id="eta"></p>
+  </div>
+</div>
+
+<!-- 먼저 보기 (카메라 없이 선생님 영상만) -->
+<div id="peek" hidden>
+  <video id="peekVid" src="teacher.mp4?v=2" playsinline controls preload="none"></video>
+  <div class="pk-in">
+    <p class="pk-t">이 후렴을 11/10(화) 20시, 강남역에서<br>NAYE 선생님이 직접 가르쳐요</p>
+    <a class="pk-apply" id="pkApply" href="#" target="_blank" rel="noopener">현장 클래스 신청하기 · 3만원</a>
+    <button class="sp-go" id="pkCam">폰 카메라로 따라 해 보기</button>
+    <button class="sp-link" id="pkBack">← 처음 화면</button>
   </div>
 </div>
 
@@ -271,6 +292,6 @@ body.replaying #stopFab{background:#000d}
   <span class="dev"><button id="skip">건너뛰기</button></span>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=45"></script>
+<script type="module" src="app.js?v=46"></script>
 </body>
 </html>

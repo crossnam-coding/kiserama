@@ -718,14 +718,32 @@ $("gdSkip").onclick = () => gdGo(cards().length - 1);
 { let x0 = null; const el = $("gdWrap");   // 손가락으로 밀어 넘기기
   el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
   el.addEventListener("touchend", e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) gdGo(gdI + (dx < 0 ? 1 : -1)); }, { passive: true }); }
-function openGuide() { $("splash").hidden = true; $("guide").hidden = false; gdI = 0; gdUpdate(); ping("guide"); }
+function openGuide() { $("splash").hidden = true; $("spVid").pause(); $("guide").hidden = false; gdI = 0; gdUpdate(); ping("guide"); }
+// 인앱 브라우저(인스타·카톡 등)는 첫 화면에서 겁주지 않고, 카메라를 고를 때만 알린다(11-03 광고 손님 90%가 첫 화면에서 나감)
+let inAppWarned = false;
 $("spGo").onclick = () => {
-  if (guided && ready) { $("splash").hidden = true; ping("open_go"); $("start").onclick(); return; }   // 다시 온 사람은 바로 시작
+  if ((isInApp() || !navigator.mediaDevices) && !inAppWarned) {
+    inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent);
+    $("spGo").textContent = "그래도 여기서 해 보기"; ping("inapp_warn"); return;
+  }
+  if (guided && ready) { $("splash").hidden = true; $("spVid").pause(); ping("open_go"); $("start").onclick(); return; }   // 다시 온 사람은 바로 시작
   openGuide();
 };
 $("spGuide").onclick = openGuide;
 { const a = $("spApply"), link = CTA_URL ? CTA_URL + encodeURIComponent(`baro_${firstTouch()}`) : "";   // 첫 화면 «바로 신청» (예습 안 거친 신청 = baro_)
   if (link) { a.href = link; a.onclick = () => ping("cta_splash"); } else a.hidden = true; }
+// 첫 화면 «안무 먼저 보기» — 카메라 없이 선생님 영상만 소리 켜고 본다 · 신청 링크 코드 bogi_
+const peekVid = $("peekVid");
+$("spPeek").onclick = () => {
+  $("splash").hidden = true; $("spVid").pause(); $("peek").hidden = false;
+  peekVid.currentTime = 0; peekVid.muted = false; peekVid.play().catch(() => {}); ping("peek");
+};
+peekVid.addEventListener("ended", () => ping("peek_end"));
+const peekClose = () => { peekVid.pause(); $("peek").hidden = true; $("splash").hidden = false; $("spVid").play().catch(() => {}); };
+$("pkBack").onclick = peekClose;
+$("pkCam").onclick = () => { peekClose(); ping("peek_cam"); $("spGo").onclick(); };
+{ const a = $("pkApply"), link = CTA_URL ? CTA_URL + encodeURIComponent(`bogi_${firstTouch()}`) : "";
+  if (link) { a.href = link; a.onclick = () => { peekVid.pause(); ping("cta_peek"); }; } else a.hidden = true; }
 $("go").onclick = () => {   // 같은 누름으로 소리·카메라 허락까지
   $("guide").hidden = true; guided = true; try { localStorage.setItem("glink_guided", "1"); } catch {}
   ping("open_go"); $("start").onclick();
@@ -758,7 +776,10 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && run
 
 // ── 시작 준비 ───────────────────────────────────────────────────────
 async function init() {
-  if (isInApp() || !navigator.mediaDevices) { $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent); }
+  if (isInApp() || !navigator.mediaDevices) {   // 어느 앱 안에서 열었나만 센다(경고는 카메라를 고를 때)
+    const ua = navigator.userAgent;
+    ping("inapp", /Instagram/i.test(ua) ? "ig" : /FBAN|FBAV/i.test(ua) ? "fb" : /KAKAOTALK/i.test(ua) ? "kakao" : /NAVER/i.test(ua) ? "naver" : isInApp() ? "other" : "noapi");
+  }
   const [pj, sj] = await Promise.all([fetch("teacher_pose.json?v=2").then(r => r.json()), fetch("steps.json").then(r => r.json())]);
   teacherFrames = pj.frames; fps = pj.fps; steps = sj.steps; BPM = sj.bpm || 130; plan = buildPlan();
   if (DEMO_HEART) plan = [{ from: 4, to: 4, label: "하트" }];
@@ -783,7 +804,7 @@ async function init() {
   msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "«시작»을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
   if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
   ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
-  if (guided) { $("spGuide").hidden = false; $("spGo").textContent = done.size ? "예습 이어서 하기" : "예습 먼저 해 보기"; }
+  if (guided) { $("spGuide").hidden = false; if (!inAppWarned) $("spGo").textContent = done.size ? "예습 이어서 하기" : "카메라로 따라 추기"; }
   requestAnimationFrame(loop);
 }
 init().catch(e => { msg("불러오기에 실패했어요. 새로고침해 주세요. (" + e.message + ")"); $("go").textContent = "불러오기 실패 · 새로고침해 주세요"; console.error(e); });
