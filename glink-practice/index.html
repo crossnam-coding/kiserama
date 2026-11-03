@@ -88,26 +88,26 @@ body.replaying #stopFab{background:#000d}
 /* 오픈 화면 */
 #splash{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center;background:#0e0e12;overflow:hidden}
 #splash[hidden],#guide[hidden]{display:none}
-.sp-bg{position:absolute;inset:0;background:url(splash.jpg) center 20%/cover;opacity:.7;filter:saturate(1.1);animation:spz 9s ease-out both}
-.sp-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0e0e1200 30%,#0e0e12e6 70%,#0e0e12 100%)}
+.sp-bg{position:absolute;inset:0;background:url(splash.jpg) center 20%/cover;opacity:1;filter:saturate(1.1);animation:spz 9s ease-out both}
+.sp-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0e0e1200 42%,#0e0e12d9 66%,#0e0e12 86%)}
 .sp-bg video{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block}
 @keyframes spz{from{transform:scale(1.12)}to{transform:scale(1)}}
 .sp-in{position:relative;width:100%;max-width:440px;padding:24px max(20px,env(safe-area-inset-right)) max(28px,calc(env(safe-area-inset-bottom) + 18px)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:12px;animation:spu .7s .15s ease-out both}
 @keyframes spu{from{transform:translateY(16px)}to{transform:none}}
 .sp-brand{letter-spacing:.35em;font-weight:800;color:var(--acc);font-size:14px}
-.sp-title{margin:0;font-size:40px;line-height:1.05;font-weight:900}
+.sp-title{margin:0;font-size:min(11vw,46px);line-height:1.05;font-weight:900}
 .sp-title span{color:var(--acc)}
-.sp-sub{margin:0;color:#e6e6ea;font-size:16px}
+.sp-sub{margin:0;color:#fff;font-size:20px;font-weight:600}
 .sp-pts{margin:4px 0 6px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;color:var(--dim);font-size:14px}
 .sp-pts li::before{content:"✓ ";color:var(--ok)}
-.sp-go{font-size:17px;padding:14px}
+.sp-go{font-size:19px;padding:15px}
 .sp-two{display:flex;gap:10px}
-.sp-two>*{flex:1 1 0;min-width:0;margin:0}
+.sp-two>*{flex:1 1 0;min-width:0;margin:0;font-size:17px;white-space:nowrap}
 .sp-apply{display:flex;align-items:center;justify-content:center;border:2px solid var(--acc);color:var(--acc);border-radius:10px;font-weight:700;text-decoration:none;box-sizing:border-box}
-.sp-class{margin:0;text-align:center;color:var(--dim);font-size:14px;line-height:1.5}
+.sp-class{margin:0;text-align:center;color:#e6e6ea;font-size:17px;line-height:1.5}
 .sp-class b{color:var(--ink)}
 .sp-due{color:var(--acc);font-weight:700}
-.sp-go small{display:block;font-size:12px;font-weight:500;opacity:.75}
+.sp-go small{display:block;font-size:14px;font-weight:500;opacity:.75}
 /* 먼저 보기 (카메라 없이) */
 #peek{position:fixed;inset:0;z-index:31;background:#000;display:flex;flex-direction:column}
 #peek[hidden]{display:none}
@@ -116,7 +116,7 @@ body.replaying #stopFab{background:#000d}
 .pk-t{margin:0;text-align:center;font-weight:700;word-break:keep-all}
 .pk-apply{display:block;text-align:center;background:var(--acc);color:#111;font-weight:700;text-decoration:none;border-radius:10px;padding:14px;font-size:17px}
 .sp-link{background:none;color:var(--dim);text-decoration:underline;padding:6px;font-size:13px}
-.sp-eta{margin:0;color:var(--dim);font-size:12px;text-align:center}
+.sp-eta{margin:0;color:var(--dim);font-size:13px;text-align:center}
 @media (prefers-reduced-motion: reduce){.sp-bg,.sp-in{animation:none}}
 /* 설치 가이드 */
 #guide{position:fixed;inset:0;z-index:29;background:var(--bg);display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,calc(env(safe-area-inset-bottom) + 10px)) max(16px,env(safe-area-inset-left))}
@@ -151,7 +151,6 @@ body.replaying #stopFab{background:#000d}
     <div class="sp-brand">GLINK</div>
     <h1 class="sp-title">Glow Connection<br><span>따라 추기</span></h1>
     <p class="sp-sub">NAYE 선생님과 후렴 안무 예습</p>
-    <ul class="sp-pts"><li>천천히 보고 · 따라 하고</li><li>맞게 추면 다음 스텝이 열려요</li><li>폰 하나면 돼요 · 영상은 폰 밖으로 안 나가요</li></ul>
     <p class="warn" id="inapp" hidden></p>
     <button id="kakaoOpen" class="pri" hidden>Safari로 열기</button>
     <p class="sp-class">11/10(화) 20시 · 강남역 · 3만원<br><b>NAYE 현장 클래스</b> · <span class="sp-due">⏰ 11/4(수)까지 신청</span></p>
@@ -292,6 +291,6 @@ body.replaying #stopFab{background:#000d}
   <span class="dev"><button id="skip">건너뛰기</button></span>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=46"></script>
+<script type="module" src="app.js?v=47"></script>
 </body>
 </html>
