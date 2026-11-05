@@ -1,0 +1,14 @@
+# KISERAMA
+
+> KISERAMA Inc. (주식회사 기세등등) is a Seoul studio producing serialized vertical drama and AI artists with generative AI. Site: https://kiserama.com/
+
+## GLINK «Glow Connection» dance practice (Korean)
+
+- [폰 카메라로 K팝 안무 따라 추기 — 사용법·채점 방식](https://kiserama.com/glink-practice/guide.html): free, install-free web tool to learn the chorus of GLINK's "Glow Connection" (choreography by NAYE) with a phone camera. Chorus ≈ 29 s, eight 8-counts at ≈ 131 BPM, 12 steps at 0.5× / 0.75× / full speed, 30-second challenge with a sync score. Pose is analysed on the device; camera video is not uploaded.
+- [Practice app](https://kiserama.com/glink-practice/)
+
+## Policies
+
+- [Privacy (practice app)](https://kiserama.com/glink-practice/privacy.html)
+- [Privacy](https://kiserama.com/privacy.html)
+- [Terms](https://kiserama.com/terms.html)

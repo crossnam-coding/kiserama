@@ -7,6 +7,7 @@ import { PoseLandmarker, FilesetResolver } from "./vendor/vision_bundle.mjs";
 // 11/10 현장 클래스 신청서(오빠 11-02 «그날 애들이 많으면 현장 클래스는 그대로 진행») · «링크 코드» 칸(entry.565880711)에 yeseup_<들어온 경로> 가 자동으로 들어간다
 const CTA_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeTPyR3wnyno11PzGgsAfQYGzAqzRbgLR-yP4yyPpoWJLBNtA/viewform?usp=pp_url&entry.565880711=";
 const CTA_CODE = "yeseup";
+const CLASS_OPEN = Date.now() < Date.parse("2026-11-05T00:00:00+09:00");   // 11/10 현장 클래스 신청 마감(11/4) 뒤엔 신청 버튼을 숨긴다
 // 사용 단계 세기: 같은 서버의 ping.txt 를 부르면 호스팅 접속 기록에 «시작·완주» 같은 단계만 남는다(영상·이름 없음)
 
 const Q = new URLSearchParams(location.search);
@@ -453,7 +454,7 @@ function teacherAudioTrack() {
     return audioDest.stream.getAudioTracks()[0];
   } catch { return null; }
 }
-function startCompose(mirror) {
+function startCompose(mirror, badge = "") {
   const cv = document.createElement("canvas"); cv.width = 720; cv.height = 1280;
   const c = cv.getContext("2d"), st = cv.captureStream ? cv.captureStream(30) : null;
   if (!st || !window.MediaRecorder) return null;
@@ -470,7 +471,10 @@ function startCompose(mirror) {
     try { c.fillStyle = "#0e0e12"; c.fillRect(0, 0, 720, 1280);
       fit(teacher, 0, 0, 720, 600, false); fit(user, 0, 610, 720, 600, mirror);
       c.fillStyle = "#fff"; c.font = "bold 30px -apple-system, sans-serif"; c.fillText("NAYE", 24, 44); c.fillText("나", 24, 654);
-      c.fillStyle = "#ffd23f"; c.font = "bold 34px -apple-system, sans-serif"; c.textAlign = "center"; c.fillText("GLINK «Glow Connection» 따라 추기", 360, 1255); c.textAlign = "left"; } catch {}
+      c.fillStyle = "#ffd23f"; c.font = "bold 34px -apple-system, sans-serif"; c.textAlign = "center"; c.fillText("GLINK «Glow Connection» 따라 추기", 360, badge ? 1236 : 1255);
+      if (badge) { c.font = "26px -apple-system, sans-serif"; c.fillStyle = "#e6e6ea"; c.fillText("kiserama.com/glink-practice", 360, 1270);
+        c.textAlign = "right"; c.fillStyle = "#ffd23f"; c.font = "bold 40px -apple-system, sans-serif"; c.fillText(badge, 700, 50); }
+      c.textAlign = "left"; } catch {}
     requestAnimationFrame(draw); })();
   r.start();
   const finish = (res) => { st.getVideoTracks().forEach(t => t.stop()); res(chunks.length ? new Blob(chunks, { type: r.mimeType || "video/mp4" }) : null); };
@@ -491,7 +495,7 @@ async function replayAttempt(a, b, speed, url, compose, myGen) {
     if (url) { user.srcObject = null; user.src = url; user.playbackRate = 1; user.currentTime = 0; }
     else { user.currentTime = sv === "test-good" ? a : sv === "test-blonde" ? Math.max(0, a - BLONDE_OFFSET) : a % (user.duration || 1); user.playbackRate = speed; }
     if (!compose) setTimeout(() => document.addEventListener("pointerdown", tap, { once: true }), 300);   // 저장 영상을 만드는 중엔 건너뛰지 않는다(잘린 영상 방지)
-    comp = compose ? startCompose(sv === "cam") : null;
+    comp = compose ? startCompose(sv === "cam", typeof compose === "string" ? compose : "") : null;
     ev("play", { a, b, speed, replay: true });
     const okPlay = await playTeacher(); user.play().catch(() => {});
     let lastT = -1, stall = 0;
@@ -524,19 +528,22 @@ function wireSave(btn, dl, blob, name, evName) {
   };
   return url;
 }
-function offerSave(blob, label, mine) {
+function offerSave(blob, label, mine, o = {}) {
   return new Promise(res => {
     const box = $("savebox"), vid = $("saveVideo");
     vid.hidden = true; $("saveHint").hidden = true;
     ["saveBtn", "dlBtn", "saveMeBtn", "dlMeBtn"].forEach(id => $(id).hidden = true);
-    const link = CTA_URL ? CTA_URL + encodeURIComponent(`${CTA_CODE}_${firstTouch()}`) : "";
+    $("saveTitle").textContent = o.title || "후렴 완주! 💃"; $("saveTitle").classList.toggle("score", !!o.title);
+    const link = CTA_URL && CLASS_OPEN ? CTA_URL + encodeURIComponent(`${CTA_CODE}_${firstTouch()}`) : "";
     $("ctaBtn").hidden = !link; if (link) { $("ctaBtn").href = link; $("ctaBtn").target = "_blank"; $("ctaBtn").onclick = () => ping("cta"); }
     const urls = [];
     if (blob) urls.push(wireSave($("saveBtn"), $("dlBtn"), blob, `GLINK_따라추기_${label.replace(/\s/g, "")}`, "save"));
     if (mine) urls.push(wireSave($("saveMeBtn"), $("dlMeBtn"), mine, "GLINK_따라추기_내춤", "save_me"));
-    $("saveText").textContent = blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "후렴 전체 통과! 내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.";
+    $("saveText").textContent = o.text || (blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "후렴 전체 통과! 내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.");
     box.hidden = false;
-    $("nextBtn").onclick = () => { box.hidden = true; vid.removeAttribute("src"); vid.load(); urls.forEach(u => URL.revokeObjectURL(u)); res(); };
+    const close = (v) => { box.hidden = true; vid.removeAttribute("src"); vid.load(); urls.forEach(u => URL.revokeObjectURL(u)); res(v); };
+    $("againBtn").hidden = !o.again; if (o.again) { $("againBtn").textContent = o.again; $("againBtn").onclick = () => { unlockMedia(); close("again"); }; }
+    $("nextBtn").onclick = () => close();
     ev("savebox");
   });
 }
@@ -684,6 +691,37 @@ async function run() {
   if (cur >= plan.length) { await big("완주! 💃", 2000); endRun("후렴 전체 완주! 처음부터 다시 하려면 «처음부터»를 눌러요."); }
   else endRun();
 }
+// ── 30초 챌린지 ── 후렴 전체를 한 번 추고 «나예 싱크로율»을 받는다 · 위 나예·아래 나 영상(점수·주소 박힘)을 저장(11-05 오빠 «앱 자체를 매력적으로»)
+let chSpeed = 1;
+const syncWord = (n) => n >= 85 ? "나예급 🔥" : n >= 70 ? "거의 다 왔어요 👏" : n >= 50 ? "좋은 출발이에요 👍" : "천천히 배우기부터 해 봐요 🙂";
+async function challenge() {
+  const myGen = await beginRun(); if (myGen == null) return;
+  ping("ch_start", chSpeed);
+  const a = steps[0].start, b = steps[steps.length - 1].end, limbs = FOCUS.all.limbs;
+  showMe(false); teacher.style.opacity = 0.5; meAlpha = 0.7; focusKey = "all"; $("focus").value = "all"; layout = null;
+  setStage(`30초 챌린지 · ${chSpeed === 1 ? "원래 속도" : chSpeed + "배"} · 나예를 따라 춰요`);
+  await big("30초 챌린지!", 1100);
+  const cam = $("src").value === "cam";
+  if (!(await playOnce(a, b, chSpeed, false, cam, myGen))) { dropRec(); return; }
+  const covered = seen + missed ? samples.length / (seen + missed) : 0;
+  if (seen + missed < 5 || covered < 0.4) { dropRec(); ping("ch_fail", seen + missed < 5 ? "slow" : "body"); endRun(seen + missed < 5 ? "카메라가 느려서 못 쟀어요. 다른 앱을 닫고 다시 해 봐요." : "몸이 화면에 다 안 보였어요. 머리부터 무릎까지 보이게 한 걸음 뒤로 가서 다시!"); return; }
+  const shape = samples.length ? samples.reduce((x, y) => x + y, 0) / samples.length : 0;
+  const want = teacherSpread(a, b, limbs), size = want > 0 ? Math.min(1.5, spread(uAng, limbs) / want) : 1;
+  const sync = Math.max(0, Math.min(100, Math.round(shape * Math.min(1, size / 0.4))));   // 채점은 스텝 연습과 같은 식
+  ping("ch_done", `${Math.floor(sync / 10) * 10}`);
+  await big(`싱크로율 ${sync}%`, 1600);
+  lastClip = null;
+  await replayAttempt(a, b, chSpeed, lastRec, `싱크로율 ${sync}%`, myGen); lastRec = null;
+  if (!running || myGen !== gen) return;
+  closeCamera(); teacher.pause(); setStage(`싱크로율 ${sync}%`);
+  const mine = lastRecBlob; lastRecBlob = null;
+  const slow = sync < 60 && chSpeed === 1;
+  const r = await offerSave(lastClip, `챌린지_${sync}`, mine, { title: `싱크로율 ${sync}%`, text: `${syncWord(sync)} 위 나예 · 아래 나 영상을 저장해서 친구한테 도전장을 보내 봐요.`, again: slow ? "0.75배로 다시 도전" : "다시 도전" });
+  lastClip = null;
+  if (myGen !== gen) return;
+  endRun("천천히 한 스텝씩 배우려면 «시작»을 눌러요.");
+  if (r === "again") { if (slow) chSpeed = 0.75; ping("ch_again", chSpeed); challenge(); }
+}
 async function testOut(i) {
   const myGen = await beginRun(); if (myGen == null) return;
   cur = i; ping("testout", plan[i].label);
@@ -721,17 +759,23 @@ $("gdSkip").onclick = () => gdGo(cards().length - 1);
 function openGuide() { $("splash").hidden = true; $("spVid").pause(); $("guide").hidden = false; gdI = 0; gdUpdate(); ping("guide"); }
 // 인앱 브라우저(인스타·카톡 등)는 첫 화면에서 겁주지 않고, 카메라를 고를 때만 알린다(11-03 광고 손님 90%가 첫 화면에서 나감)
 let inAppWarned = false;
+function camGate(btn) {   // 앱 안 브라우저면 카메라 고를 때 한 번만 알린다 → false = 이번 누름은 안내만
+  if (!(isInApp() || !navigator.mediaDevices) || inAppWarned) return true;
+  inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent);
+  btn.textContent = "그래도 여기서 해 보기"; ping("inapp_warn"); return false;
+}
+$("spChal").onclick = async () => {
+  if (!camGate($("spChal"))) return;
+  unlockMedia(); $("splash").hidden = true; $("spVid").pause(); ping("ch_open");
+  if (!ready) { setStage("준비 중… 잠깐만요"); while (!ready) await sleep(100); }
+  chSpeed = 1; challenge();
+};
 $("spGo").onclick = () => {
-  if ((isInApp() || !navigator.mediaDevices) && !inAppWarned) {
-    inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent);
-    $("spGo").textContent = "그래도 여기서 해 보기"; ping("inapp_warn"); return;
-  }
+  if (!camGate($("spGo"))) return;
   if (guided && ready) { $("splash").hidden = true; $("spVid").pause(); ping("open_go"); $("start").onclick(); return; }   // 다시 온 사람은 바로 시작
   openGuide();
 };
 $("spGuide").onclick = openGuide;
-{ const a = $("spApply"), link = CTA_URL ? CTA_URL + encodeURIComponent(`baro_${firstTouch()}`) : "";   // 첫 화면 «바로 신청» (예습 안 거친 신청 = baro_)
-  if (link) { a.href = link; a.onclick = () => ping("cta_splash"); } else a.hidden = true; }
 // 첫 화면 «안무 먼저 보기» — 카메라 없이 선생님 영상만 소리 켜고 본다 · 신청 링크 코드 bogi_
 const peekVid = $("peekVid");
 $("spPeek").onclick = () => {
@@ -742,8 +786,7 @@ peekVid.addEventListener("ended", () => ping("peek_end"));
 const peekClose = () => { peekVid.pause(); $("peek").hidden = true; $("splash").hidden = false; $("spVid").play().catch(() => {}); };
 $("pkBack").onclick = peekClose;
 $("pkCam").onclick = () => { peekClose(); ping("peek_cam"); $("spGo").onclick(); };
-{ const a = $("pkApply"), link = CTA_URL ? CTA_URL + encodeURIComponent(`bogi_${firstTouch()}`) : "";
-  if (link) { a.href = link; a.onclick = () => { peekVid.pause(); ping("cta_peek"); }; } else a.hidden = true; }
+$("pkChal").onclick = () => { peekClose(); ping("peek_chal"); $("spChal").onclick(); };
 $("go").onclick = () => {   // 같은 누름으로 소리·카메라 허락까지
   $("guide").hidden = true; guided = true; try { localStorage.setItem("glink_guided", "1"); } catch {}
   ping("open_go"); $("start").onclick();
@@ -804,7 +847,7 @@ async function init() {
   msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "«시작»을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
   if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
   ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
-  if (guided) { $("spGuide").hidden = false; if (!inAppWarned) $("spGo").textContent = done.size ? "예습 이어서 하기" : "카메라로 따라 추기"; }
+  if (guided) { $("spGuide").hidden = false; if (!inAppWarned) $("spGo").textContent = done.size ? "이어서 배우기" : "차근차근 배우기"; }
   requestAnimationFrame(loop);
 }
 init().catch(e => { msg("불러오기에 실패했어요. 새로고침해 주세요. (" + e.message + ")"); $("go").textContent = "불러오기 실패 · 새로고침해 주세요"; console.error(e); });

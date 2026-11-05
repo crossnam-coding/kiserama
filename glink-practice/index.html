@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Glow Connection 따라 추기 · NAYE 예습</title>
-<meta name="description" content="GLINK «Glow Connection» 후렴 안무를 NAYE 선생님과 한 스텝씩 따라 추며 예습해요. 카메라 영상은 이 폰 안에서만 쓰여요.">
-<meta property="og:title" content="Glow Connection 따라 추기 · NAYE 예습">
-<meta property="og:description" content="폰 하나로 후렴 안무 예습 — 맞게 추면 다음 스텝이 열려요">
+<title>Glow Connection 따라 추기 · 폰 카메라로 NAYE 안무 30초 챌린지</title>
+<meta name="description" content="설치 없이 폰 카메라로 GLINK «Glow Connection» 후렴 안무(NAYE)를 따라 추고 싱크로율을 재는 무료 웹 연습. 30초 챌린지 · 한 스텝씩 배우기. 카메라 영상은 폰 밖으로 나가지 않아요.">
+<link rel="canonical" href="https://kiserama.com/glink-practice/">
+<meta property="og:title" content="Glow Connection 30초 챌린지 · 나예 싱크로율 재기">
+<meta property="og:description" content="폰 하나로 NAYE 안무를 따라 추고 싱크로율을 재요 · 무료 · 설치 없음">
 <meta property="og:image" content="https://kiserama.com/glink-practice/og.jpg">
 <meta property="og:url" content="https://kiserama.com/glink-practice/">
-<meta name="robots" content="noindex">
 <meta property="og:type" content="website">
 <style>
 :root{--bg:#0e0e12;--panel:#17171d;--ink:#f3f3f5;--dim:#a2a2ae;--ok:#3ddc84;--bad:#ff5a6a;--acc:#ffd23f}
@@ -107,6 +107,7 @@ body.replaying #stopFab{background:#000d}
 .sp-class{margin:0;text-align:center;color:#e6e6ea;font-size:17px;line-height:1.5}
 .sp-class b{color:var(--ink)}
 .sp-due{color:var(--acc);font-weight:700}
+#saveTitle.score{font-size:44px;color:var(--acc);margin:4px 0}
 .sp-go small{display:block;font-size:14px;font-weight:500;opacity:.75}
 /* 먼저 보기 (카메라 없이) */
 #peek{position:fixed;inset:0;z-index:31;background:#000;display:flex;flex-direction:column}
@@ -150,17 +151,18 @@ body.replaying #stopFab{background:#000d}
   <div class="sp-in">
     <div class="sp-brand">GLINK</div>
     <h1 class="sp-title">Glow Connection<br><span>따라 추기</span></h1>
-    <p class="sp-sub">NAYE 선생님과 후렴 안무 예습</p>
+    <p class="sp-sub">NAYE 선생님 후렴 안무, 폰 카메라로 따라 추고 싱크로율 재기</p>
     <p class="warn" id="inapp" hidden></p>
     <button id="kakaoOpen" class="pri" hidden>Safari로 열기</button>
-    <p class="sp-class">11/10(화) 20시 · 강남역 · 3만원<br><b>NAYE 현장 클래스</b> · <span class="sp-due">⏰ 11/4(수)까지 신청</span></p>
-    <button class="pri sp-go" id="spPeek">▶ 안무 먼저 보기<small>카메라 없이 · 30초</small></button>
+    <button class="pri sp-go" id="spChal">🔥 30초 챌린지<small>나예 싱크로율 재고 영상 저장 · 무료</small></button>
     <div class="sp-two">
-      <button class="sp-go" id="spGo">카메라로 따라 추기</button>
-      <a class="sp-go sp-apply" id="spApply" href="#" target="_blank" rel="noopener">바로 신청하기</a>
+      <button class="sp-go" id="spPeek">▶ 안무 먼저 보기</button>
+      <button class="sp-go" id="spGo">차근차근 배우기</button>
     </div>
+    <p class="sp-class">폰을 세워 두고 2m 뒤에서 · 카메라 영상은 폰 밖으로 안 나가요</p>
     <button class="sp-link" id="spGuide" hidden>설치 가이드 다시 보기</button>
     <p class="sp-eta" id="eta"></p>
+    <p class="sp-eta"><a href="guide.html" style="color:inherit">어떻게 채점하나요? · 사용법</a></p>
   </div>
 </div>
 
@@ -168,9 +170,9 @@ body.replaying #stopFab{background:#000d}
 <div id="peek" hidden>
   <video id="peekVid" src="teacher.mp4?v=2" playsinline controls preload="none"></video>
   <div class="pk-in">
-    <p class="pk-t">이 후렴을 11/10(화) 20시, 강남역에서<br>NAYE 선생님이 직접 가르쳐요</p>
-    <a class="pk-apply" id="pkApply" href="#" target="_blank" rel="noopener">현장 클래스 신청하기 · 3만원</a>
-    <button class="sp-go" id="pkCam">폰 카메라로 따라 해 보기</button>
+    <p class="pk-t">이 후렴 30초를 따라 추면<br>나예 싱크로율이 나와요</p>
+    <button class="pri sp-go" id="pkChal">🔥 30초 챌린지 해 보기</button>
+    <button class="sp-go" id="pkCam">차근차근 배우기</button>
     <button class="sp-link" id="pkBack">← 처음 화면</button>
   </div>
 </div>
@@ -261,7 +263,7 @@ body.replaying #stopFab{background:#000d}
 <!-- 완주 · 저장 · 신청 -->
 <div class="modal" id="savebox" hidden>
   <div class="card">
-    <h2>후렴 완주! 💃</h2>
+    <h2 id="saveTitle">후렴 완주! 💃</h2>
     <p id="saveText">방금 춘 후렴 전체(위 선생님 · 아래 나)를 내 폰에 저장할 수 있어요.</p>
     <video id="saveVideo" playsinline controls muted hidden></video>
     <p class="note" id="saveHint" hidden>«파일로 저장»을 누르면 파일 앱 › 다운로드에 저장돼요. 파일 앱에서 열어 공유 → «동영상 저장»을 누르면 사진첩으로 가요.</p>
@@ -270,6 +272,7 @@ body.replaying #stopFab{background:#000d}
     <button class="pri" id="saveBtn">선생님과 같이 저장·공유</button>
     <a id="dlBtn" hidden class="dl">선생님과 같이 · 파일로 저장</a>
     <a id="ctaBtn" hidden><button class="pri" style="width:100%">11/10 NAYE 현장 클래스 신청하기 →</button></a>
+    <button class="pri" id="againBtn" hidden>다시 도전</button>
     <button id="nextBtn">마치기</button>
   </div>
 </div>
@@ -291,6 +294,6 @@ body.replaying #stopFab{background:#000d}
   <span class="dev"><button id="skip">건너뛰기</button></span>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=47"></script>
+<script type="module" src="app.js?v=48"></script>
 </body>
 </html>
