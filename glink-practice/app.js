@@ -31,7 +31,7 @@ function ping(e, sub = "") {
   if (DEV || DEMO || !GC) return;
   try {
     const p = `/glink-practice/e/${e}${sub ? "/" + String(sub).replace(/[^\w가-힣~.-]/g, "_") : ""}`;
-    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&r=${encodeURIComponent(firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
     fetch(url, { mode: "no-cors", keepalive: true, cache: "no-store" }).catch(() => { new Image().src = url; });
   } catch {}
 }
@@ -263,10 +263,10 @@ async function playTeacher() {
 let camStream = null, camErr = "";
 function inAppHow() {
   const ua = navigator.userAgent;
-  if (/KAKAOTALK/i.test(ua)) return "카카오톡 안에서는 카메라가 안 열려요. 아래 «Safari로 열기»를 눌러 주세요.";
+  if (/KAKAOTALK/i.test(ua)) return "카카오톡 안에서는 카메라가 안 열려요. 아래 «외부 브라우저로 열기»를 눌러 주세요.";
   if (/Instagram|FBAN|FBAV/i.test(ua)) return "인스타그램 안에서는 카메라가 안 열려요. 오른쪽 위 ⋯ → «외부 브라우저에서 열기»를 눌러 주세요.";
   if (/NAVER/i.test(ua)) return "네이버 앱 안에서는 카메라가 안 열려요. 오른쪽 아래 ⋯ → «다른 브라우저로 열기»를 눌러 주세요.";
-  return "이 앱 안에서는 카메라가 안 열려요. 메뉴(⋯)에서 «Safari로 열기»를 눌러 주세요.";
+  return /Android/i.test(ua) ? "이 앱 안에서는 카메라가 안 열려요. 메뉴(⋮)에서 «다른 브라우저로 열기»(크롬·삼성 인터넷)를 눌러 주세요." : "이 앱 안에서는 카메라가 안 열려요. 메뉴(⋯)에서 «Safari로 열기»를 눌러 주세요.";
 }
 const isInApp = () => /KAKAOTALK|Instagram|FBAN|FBAV|NAVER|Line\/|everytimeApp|DaumApps/i.test(navigator.userAgent);
 const CAM_TRIES = [{ aspectRatio: { exact: 3 / 4 }, height: { ideal: 960 } }, { width: { ideal: 720 }, height: { ideal: 960 } }, {}];
@@ -304,7 +304,9 @@ function closeCamera() { camStream?.getTracks().forEach(t => t.stop()); camStrea
 function showFail(m) { $("failText").textContent = m; $("kakaoBtn").hidden = !/KAKAOTALK/i.test(navigator.userAgent); $("fail").hidden = false; }
 function camFailMessage() {
   if (camErr === "noapi" || isInApp()) return inAppHow();
-  if (camErr === "NotAllowedError" || camErr === "SecurityError") return "카메라를 허용해 주세요. 주소창 왼쪽 «가가»(또는 «aA») → 웹 사이트 설정 → 카메라 → «허용»을 고른 뒤 새로고침해 주세요.";
+  if (camErr === "NotAllowedError" || camErr === "SecurityError") return /Android/i.test(navigator.userAgent)
+    ? "카메라를 허용해 주세요. 주소창 왼쪽 자물쇠(또는 ⓘ) → 권한 → 카메라 → «허용»을 고른 뒤 새로고침해 주세요."
+    : "카메라를 허용해 주세요. 주소창 왼쪽 «가가»(또는 «aA») → 웹 사이트 설정 → 카메라 → «허용»을 고른 뒤 새로고침해 주세요.";;
   if (camErr === "NotReadableError") return "다른 앱이 카메라를 쓰고 있어요. 그 앱을 닫고 다시 시도해 주세요.";
   return "카메라를 켜지 못했어요. 새로고침 후 다시 시도해 주세요.";
 }
