@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>[시험판] Glow Connection 따라 추기 · 폰 카메라로 NAYE 안무 30초 챌린지</title>
+<meta name="description" content="설치 없이 폰 카메라로 GLINK «Glow Connection» 후렴 안무(NAYE)를 따라 추고 싱크로율을 재는 무료 웹 연습. 30초 챌린지 · 한 스텝씩 배우기. 카메라 영상은 폰 밖으로 나가지 않아요.">
+<meta property="og:title" content="Glow Connection 30초 챌린지 · 나예 싱크로율 재기">
+<meta property="og:description" content="폰 하나로 NAYE 안무를 따라 추고 싱크로율을 재요 · 무료 · 설치 없음">
+<meta property="og:image" content="https://kiserama.com/glink-practice/og.jpg">
+<meta property="og:url" content="https://kiserama.com/glink-practice/">
+<meta property="og:type" content="website">
+<style>
+:root{--bg:#0e0e12;--panel:#17171d;--ink:#f3f3f5;--dim:#a2a2ae;--ok:#3ddc84;--bad:#ff5a6a;--acc:#ffd23f}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo",Pretendard,sans-serif;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.stage{flex:1;display:flex;flex-direction:column;gap:4px;min-height:0}
+.pane{position:relative;flex:1;min-height:0;background:#000;display:flex;justify-content:center;overflow:hidden}
+.pane video,.pane canvas{position:absolute;height:100%;max-width:100%;object-fit:contain}
+.pane canvas{pointer-events:none}
+#tbox{position:absolute;inset:0;display:flex;justify-content:center;transform-origin:50% 50%;will-change:transform}
+#teacher{transition:opacity .4s}
+#user,#userCanvas{object-fit:contain}
+#user,#userCanvas.mirror{transform:scaleX(-1)}
+#user.nomirror{transform:none}
+.pane.me.hide{flex:0 0 0;min-height:0;overflow:hidden}
+.tag{position:absolute;left:10px;top:8px;background:#0009;padding:3px 8px;border-radius:6px;font-size:13px;color:var(--dim);z-index:2}
+#tscore{position:absolute;right:12px;top:60px;z-index:2;font-size:28px;font-weight:800;text-shadow:0 2px 10px #000}
+#nayeSay{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(44vw,240px);aspect-ratio:9/16;object-fit:cover;border-radius:18px;box-shadow:0 10px 40px #000a;border:2px solid #fff3;z-index:40;display:none;background:#000}
+#big{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 4vw;font-size:min(13vw,16vh,96px);line-height:1.15;font-weight:800;text-shadow:0 4px 24px #000;z-index:7;pointer-events:none;word-break:keep-all}
+.bar{position:absolute;left:0;right:0;bottom:0;height:6px;background:#fff1;z-index:2}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .1s}
+.ctl{background:var(--panel);border-radius:18px 18px 0 0;padding:12px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));display:flex;flex-wrap:wrap;gap:9px;align-items:center;font-size:14px}
+/* 차근차근 배우기 조작판(11-11 새 단장): 진행 막대 + 옆으로 넘기는 스텝 길 + 큰 시작 버튼 */
+.lhead{flex-basis:100%;display:flex;align-items:baseline;gap:10px;font-size:15px;font-weight:800;color:var(--ink)}
+.lhead small{margin-left:auto;color:var(--dim);font-weight:600;font-size:13px}
+.lbar{flex-basis:100%;height:6px;border-radius:3px;background:#2a2a33;overflow:hidden}
+.lbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),#ff9f43);border-radius:3px}
+.steps{flex-basis:100%;display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:5px 3px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.steps::-webkit-scrollbar{display:none}
+.steps span{flex:0 0 auto;min-width:42px;height:42px;padding:0 10px;border-radius:21px;background:#2a2a33;color:var(--dim);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;cursor:pointer;border:2px solid transparent;box-sizing:border-box;white-space:nowrap}
+.steps span.grp{border-radius:12px;font-size:13px}
+.steps span.done{background:#1f5c3a;color:#fff}
+.steps span.cur{border-color:#fff;background:var(--acc);color:#111;box-shadow:0 0 0 4px #ffd23f40}
+.steps span{position:relative}
+.steps span.lock{opacity:.55}
+.steps span.lock::after{content:"🔒";position:absolute;right:-3px;top:-5px;font-size:11px}
+#start{flex-basis:100%;padding:15px;font-size:18px;border-radius:14px}
+#start:not(:disabled)::before{content:"▶  "}
+.lopt{flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.seg{display:flex;background:#2a2a33;border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:6px 12px;font-size:13px;background:none;color:var(--dim);border-radius:8px}
+.seg button.on{background:#44444f;color:#fff;font-weight:700}
+#reset{margin-left:auto;background:none;color:var(--dim);text-decoration:underline;font-size:13px;padding:6px 2px}
+.mehint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#6f6f7c;font-size:15px;line-height:1.6}
+body.playing .mehint{display:none}
+button,select{background:#2a2a33;color:var(--ink);border:0;border-radius:10px;padding:9px 14px;font-size:15px;cursor:pointer}
+button.pri{background:var(--acc);color:#111;font-weight:700}
+button:disabled{opacity:.5}
+#msg{color:#d8d8e0;flex-basis:100%;font-size:13.5px;background:#ffffff0d;border-radius:10px;padding:9px 12px;line-height:1.45}
+#msg::before{content:"💡 "}
+label{color:var(--dim)}
+.dev{display:none}
+body.devmode .dev{display:inline-flex;gap:6px;align-items:center}
+/* 연습 중: 스텝 칸만 겹쳐 띄우고 자리 차지 안 함 · 단계 이름 띠는 위에 */
+body.playing .ctl{position:fixed;left:0;right:0;bottom:0;z-index:6;background:linear-gradient(transparent,#000a);padding-top:18px;pointer-events:none}
+body.playing .ctl > :not(.steps){display:none}
+body.playing .ctl{border-radius:0}
+body.playing .steps span{background:#ffffff26;backdrop-filter:blur(4px);min-width:34px;height:34px;font-size:13px;box-shadow:none}
+body.playing .steps span.cur{background:var(--acc)}
+body.playing .steps span.done{background:#1f5c3acc}
+#stagebar{display:none;position:fixed;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));z-index:6;background:#000b;color:#fff;border-radius:16px;padding:6px 12px;font-size:14px;max-width:calc(100vw - 120px);text-align:center;word-break:keep-all}
+body.playing #stagebar{display:block}
+#stagebar.tip{background:#b8323fcc}
+#stopFab{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));z-index:8;background:#000b;color:#fff;border-radius:22px;padding:9px 15px;font-size:15px}
+body.playing #stopFab{display:block}
+/* 연습 중 내 카메라 작은 창 */
+body.playing .pane.me.hide{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(52px,calc(env(safe-area-inset-top) + 44px));width:24vw;height:32vw;flex:none;z-index:6;border-radius:10px;border:2px solid #ffffff55;background:#000}
+body.playing .pane.me.hide .tag,body.playing .pane.me.hide #score,body.playing .pane.me.hide .bar,body.playing .pane.me.hide canvas{display:none}
+/* 통과 후 내 동작 다시 보기: 내 영상 가득 · 나예는 오른쪽 위 작은 창 */
+body.replaying .stage>.pane:first-child{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(110px,calc(env(safe-area-inset-top) + 100px));width:30vw;height:48vw;flex:none;z-index:6;border-radius:10px;border:2px solid #ffffff55}
+body.replaying .stage>.pane:first-child .tag,body.replaying #tscore,body.replaying #score{display:none}
+body.replaying .pane.me{flex:1}
+#score{position:absolute;right:10px;top:8px;z-index:2;text-align:right}
+#score b{font-size:30px;display:block}
+#score small{color:var(--dim)}
+/* 모달 공통 */
+.modal{position:fixed;inset:0;z-index:10;background:#000c;display:flex;align-items:center;justify-content:center;padding:20px max(16px,env(safe-area-inset-right)) 20px max(16px,env(safe-area-inset-left));overflow:auto}
+.modal[hidden]{display:none}
+.card{background:var(--panel);border-radius:16px;padding:20px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:12px}
+.card h1{font-size:21px;margin:0;line-height:1.3;word-break:keep-all}
+.card h2{font-size:19px;margin:0}
+.card p,.card li{color:var(--dim);margin:0;font-size:14px;line-height:1.55;word-break:keep-all}
+.card ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.card li b{color:var(--ink)}
+.card a{color:var(--acc)}
+.card .row{display:flex;gap:8px;flex-wrap:wrap}
+.card .row button{flex:1}
+.card .note{font-size:12px}
+.warn{background:#3a2a10;border-radius:10px;padding:10px;color:#ffd9a0!important}
+#turn{display:none}
+@media (orientation: landscape) and (max-height: 600px){
+  #turn{display:flex;position:fixed;inset:0;z-index:20;background:var(--bg);align-items:center;justify-content:center;font-size:20px;color:var(--ink)}
+}
+#big.setup{font-size:min(9vw,56px)}
+body.replaying #stopFab{background:#000d}
+
+/* 오픈 화면 */
+#splash{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;justify-content:center;background:#0e0e12;overflow:hidden}
+#splash[hidden],#guide[hidden]{display:none}
+.sp-bg{position:absolute;inset:0;background:url(splash.jpg) center 20%/cover;opacity:1;filter:saturate(1.1);animation:spz 9s ease-out both}
+.sp-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0e0e1200 20%,#0e0e1280 36%,#0e0e12e0 54%,#0e0e12 74%)}
+.sp-bg video{width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block}
+@keyframes spz{from{transform:scale(1.12)}to{transform:scale(1)}}
+.sp-in{position:relative;width:100%;max-width:440px;padding:24px max(20px,env(safe-area-inset-right)) max(28px,calc(env(safe-area-inset-bottom) + 18px)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:12px;animation:spu .7s .15s ease-out both}
+@keyframes spu{from{transform:translateY(16px)}to{transform:none}}
+.sp-brand{letter-spacing:.35em;font-weight:800;color:var(--acc);font-size:14px;text-shadow:0 1px 8px #000c}
+.sp-title{margin:0;font-size:min(10.5vw,44px);line-height:1.05;font-weight:900;text-shadow:0 2px 18px #000a}
+.sp-title span{color:var(--acc)}
+.sp-sub{margin:0;color:#fff;font-size:min(4.6vw,19px);font-weight:600;text-shadow:0 1px 10px #000a}
+.sp-pts{margin:4px 0 6px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;color:var(--dim);font-size:14px}
+.sp-pts li::before{content:"✓ ";color:var(--ok)}
+.sp-go{font-size:19px;padding:15px}
+.sp-chips{margin:0;padding:0;list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.sp-chips li{font-size:13px;font-weight:600;color:#fff;background:#ffffff1f;border:1px solid #ffffff33;border-radius:999px;padding:4px 10px}
+.sp-course{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.sp-course::-webkit-scrollbar{display:none}
+.sp-hw,#hw{margin:0;font-size:13.5px;color:#fff;background:#ffffff14;border:1px solid #ffffff2e;border-radius:10px;padding:8px 12px}
+.sp-hw.ok,#hw.ok{border-color:var(--ok);color:var(--ok)}
+#hw{flex-basis:100%;box-sizing:border-box}
+#tip{flex-basis:100%;box-sizing:border-box;font-size:13.5px;line-height:1.45;color:#111;background:var(--acc);border-radius:10px;padding:9px 12px;font-weight:600}
+.sp-course button{flex:0 0 44%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;padding:9px 6px;font-size:14.5px;font-weight:700;background:#ffffff14;color:#fff;border:2px solid #ffffff2e;border-radius:12px;line-height:1.25}
+.sp-course button.on{border-color:var(--acc);background:#ffffff26;color:var(--acc)}
+.sp-course small{display:block;font-size:12px;font-weight:500;opacity:.8;color:#fff}
+.sp-course b{font-size:10px;background:var(--acc);color:#111;border-radius:4px;padding:1px 4px;vertical-align:2px}
+.sp-two{display:flex;gap:10px}
+.sp-two>*{flex:1 1 0;min-width:0;margin:0;font-size:17px;white-space:nowrap}
+.sp-apply{display:flex;align-items:center;justify-content:center;border:2px solid var(--acc);color:var(--acc);border-radius:10px;font-weight:700;text-decoration:none;box-sizing:border-box}
+.sp-class{margin:0;text-align:center;color:#e6e6ea;font-size:17px;line-height:1.5}
+.sp-class b{color:var(--ink)}
+.sp-due{color:var(--acc);font-weight:700}
+#saveTitle.score{font-size:44px;color:var(--acc);margin:4px 0}
+.sp-go small{display:block;font-size:14px;font-weight:500;opacity:.75}
+/* 먼저 보기 (카메라 없이) */
+#peek{position:fixed;inset:0;z-index:31;background:#000;display:flex;flex-direction:column}
+#peek[hidden]{display:none}
+#peekVid{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
+.pk-in{width:100%;max-width:440px;margin:0 auto;box-sizing:border-box;padding:14px max(16px,env(safe-area-inset-right)) max(18px,calc(env(safe-area-inset-bottom) + 12px)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:10px}
+.pk-t{margin:0;text-align:center;font-weight:700;word-break:keep-all}
+.pk-apply{display:block;text-align:center;background:var(--acc);color:#111;font-weight:700;text-decoration:none;border-radius:10px;padding:14px;font-size:17px}
+.sp-link{background:none;color:var(--dim);text-decoration:underline;padding:6px;font-size:13px}
+.sp-eta{margin:0;color:var(--dim);font-size:13px;text-align:center}
+.sp-safe{color:#e6e6ea}
+.sp-links{margin:0;display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.sp-links .sp-link{padding:4px 2px}
+@media (prefers-reduced-motion: reduce){.sp-bg,.sp-in{animation:none}}
+/* 설치 가이드 */
+#guide{position:fixed;inset:0;z-index:29;background:var(--bg);display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,calc(env(safe-area-inset-bottom) + 10px)) max(16px,env(safe-area-inset-left))}
+.gd-top{display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:13px}
+.gd-wrap{flex:1;overflow:hidden;min-height:0;display:flex}
+.gd-cards{flex:1;display:flex;min-height:0;transition:transform .3s ease}
+@media (prefers-reduced-motion: reduce){.gd-cards{transition:none}}
+.gd-card{flex:0 0 100%;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:8px 4px;max-width:520px;margin:0 auto;min-width:0}
+.gd-ill{width:100%;max-height:38vh;background:#15151b;border-radius:16px}
+.gd-card h2{margin:6px 0 0;font-size:22px;word-break:keep-all}
+.gd-card h2 b{color:var(--acc)}
+.gd-card p{margin:0;color:var(--dim);font-size:15px;line-height:1.6;word-break:keep-all}
+.gd-card a{color:var(--acc)}
+.gd-card p.gd-small{font-size:13px;line-height:1.55}
+.gd-dots{display:flex;justify-content:center;gap:6px;margin:10px 0}
+.gd-dots i{width:7px;height:7px;border-radius:50%;background:#3a3a46}
+.gd-dots i.on{background:var(--acc);width:20px;border-radius:4px}
+.gd-nav{display:flex;gap:10px}
+.gd-nav button{flex:1;padding:13px;font-size:16px}
+#go{width:100%;padding:14px;font-size:17px}
+.card a.dl{font-size:13px;color:var(--dim);text-align:center;text-decoration:underline;padding:2px}
+#saveVideo{width:100%;border-radius:10px;background:#000;max-height:40vh}
+</style>
+</head>
+<body>
+<div id="turn">📱 폰을 세로로 세워 주세요</div>
+
+<!-- 오픈 화면 (앱처럼) -->
+<div id="splash">
+  <div class="sp-bg"><video id="spVid" src="hero.mp4?v=2" poster="splash.jpg?v=3" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video></div>
+  <div class="sp-in">
+    <div class="sp-brand" id="spBrand">NAYE CLASS</div>
+    <h1 class="sp-title" id="spTitle">Glow Connection<br><span>따라 추기</span></h1>
+    <p class="sp-sub">NAYE가 가르치고, 폰 카메라가 채점해요</p>
+    <ul class="sp-chips"><li>🎯 싱크로율 채점</li><li>🐢 0.5배 천천히</li><li>💬 나예 한마디</li></ul>
+    <p class="warn" id="inapp" hidden></p>
+    <button id="kakaoOpen" class="pri" hidden>외부 브라우저로 열기</button>
+    <div class="sp-course" id="lessonRow" role="group" aria-label="곡 고르기"></div>
+    <p class="sp-hw" id="spHw"></p>
+    <button class="pri sp-go" id="spChal">🔥 <span class="chn">30초 챌린지</span><small>나예 싱크로율 재고 영상 저장 · 무료</small></button>
+    <div class="sp-two">
+      <button class="sp-go" id="spPeek">▶ 안무 먼저 보기</button>
+      <button class="sp-go" id="spGo">차근차근 배우기</button>
+    </div>
+    <p class="sp-eta sp-safe">📱 폰 세워 두고 2m 뒤에서 · 내 영상은 폰 밖으로 안 나가요</p>
+    <p class="sp-eta" id="eta"></p>
+    <p class="sp-links"><button class="sp-link" id="spHello">▶ 나예 선생님 인사</button><a class="sp-link" href="guide.html">채점 방법 · 사용법</a><button class="sp-link" id="spGuide" hidden>설치 가이드</button></p>
+  </div>
+</div>
+
+<!-- 먼저 보기 (카메라 없이 선생님 영상만) -->
+<div id="peek" hidden>
+  <video id="peekVid" playsinline controls preload="none"></video>
+  <div class="pk-in">
+    <p class="pk-t">이 후렴 <span class="chs">30</span>초를 따라 추면<br>나예 싱크로율이 나와요</p>
+    <button class="pri sp-go" id="pkChal">🔥 <span class="chn">30초 챌린지</span> 해 보기</button>
+    <button class="sp-go" id="pkCam">차근차근 배우기</button>
+    <button class="sp-link" id="pkBack">← 처음 화면</button>
+  </div>
+</div>
+
+<!-- 설치 가이드 (넘겨 보기) -->
+<div id="guide" hidden>
+  <div class="gd-top"><span id="gdCount">1 / 4</span><button class="sp-link" id="gdSkip">건너뛰기</button></div>
+  <div class="gd-wrap" id="gdWrap"><div class="gd-cards" id="gdCards">
+    <section class="gd-card">
+      <svg viewBox="0 0 320 240" class="gd-ill" aria-hidden="true">
+        <rect x="0" y="200" width="320" height="6" fill="#2a2a33"/>
+        <!-- 의자 위 책 + 세운 폰 -->
+        <rect x="40" y="150" width="70" height="50" rx="4" fill="#3a3a46"/><rect x="48" y="134" width="54" height="16" rx="2" fill="#5b4b8a"/><rect x="50" y="122" width="50" height="12" rx="2" fill="#8a6b3a"/>
+        <rect x="64" y="72" width="26" height="50" rx="5" fill="#111" stroke="#ffd23f" stroke-width="3"/><circle cx="77" cy="78" r="2" fill="#ffd23f"/>
+        <!-- 사람 -->
+        <circle cx="240" cy="52" r="14" fill="#f3f3f5"/><rect x="226" y="68" width="28" height="62" rx="12" fill="#f3f3f5"/><rect x="228" y="128" width="10" height="72" rx="5" fill="#f3f3f5"/><rect x="242" y="128" width="10" height="72" rx="5" fill="#f3f3f5"/>
+        <!-- 배꼽 높이 선 -->
+        <line x1="20" y1="100" x2="300" y2="100" stroke="#ffd23f" stroke-dasharray="6 6" stroke-width="2"/>
+        <text x="120" y="92" fill="#ffd23f" font-size="13">배꼽 높이 ≈ 1m</text>
+      </svg>
+      <h2>① 폰을 <b>세로로</b>, 배꼽 높이에</h2>
+      <p>의자 위에 책을 쌓거나 선반·창틀에 기대 세워 주세요. 화면이 나를 보게(앞카메라) 두면 돼요.</p>
+    </section>
+    <section class="gd-card">
+      <svg viewBox="0 0 320 240" class="gd-ill" aria-hidden="true">
+        <rect x="0" y="200" width="320" height="6" fill="#2a2a33"/>
+        <rect x="30" y="110" width="18" height="34" rx="4" fill="#111" stroke="#ffd23f" stroke-width="3"/>
+        <polygon points="48,127 250,40 250,206" fill="#ffd23f22"/>
+        <circle cx="240" cy="62" r="13" fill="#f3f3f5"/><rect x="227" y="77" width="26" height="58" rx="11" fill="#f3f3f5"/><rect x="229" y="133" width="9" height="67" rx="4" fill="#f3f3f5"/><rect x="242" y="133" width="9" height="67" rx="4" fill="#f3f3f5"/>
+        <line x1="48" y1="220" x2="232" y2="220" stroke="#ffd23f" stroke-width="2"/><polygon points="232,215 242,220 232,225" fill="#ffd23f"/><polygon points="58,215 48,220 58,225" fill="#ffd23f"/>
+        <text x="140" y="236" fill="#ffd23f" font-size="14" text-anchor="middle">약 2m (큰 걸음 세 번)</text>
+      </svg>
+      <h2>② <b>2m</b> 떨어져 서요</h2>
+      <p>머리부터 무릎 아래(되면 발끝)까지 화면에 들어오면 돼요. 시작하면 화면에 «무릎이 안 보여요»처럼 알려 줘요.</p>
+    </section>
+    <section class="gd-card">
+      <svg viewBox="0 0 320 240" class="gd-ill" aria-hidden="true">
+        <rect x="20" y="30" width="130" height="170" rx="10" fill="#1b1b22" stroke="#3a3a46"/>
+        <circle cx="85" cy="70" r="22" fill="#ffd23f"/><g stroke="#ffd23f" stroke-width="3">
+        <line x1="85" y1="38" x2="85" y2="30"/><line x1="85" y1="102" x2="85" y2="110"/><line x1="53" y1="70" x2="45" y2="70"/><line x1="117" y1="70" x2="125" y2="70"/></g>
+        <text x="85" y="150" fill="#f3f3f5" font-size="15" text-anchor="middle">밝은 곳</text><text x="85" y="172" fill="#a2a2ae" font-size="12" text-anchor="middle">빛은 내 앞쪽에서</text>
+        <rect x="170" y="30" width="130" height="170" rx="10" fill="#1b1b22" stroke="#3a3a46"/>
+        <path d="M205 95 h16 l20 -18 v66 l-20 -18 h-16 z" fill="#f3f3f5"/><path d="M252 90 q12 20 0 40 M262 80 q22 30 0 60" stroke="#ffd23f" stroke-width="4" fill="none"/>
+        <text x="235" y="172" fill="#f3f3f5" font-size="15" text-anchor="middle">소리 켜기</text><text x="235" y="192" fill="#a2a2ae" font-size="12" text-anchor="middle">무음 스위치 끄기</text>
+      </svg>
+      <h2>③ <b>밝은 곳</b>에서, <b>소리 켜고</b></h2>
+      <p>창을 등지면(역광) 몸을 잘 못 알아봐요. 무음 모드면 박자 소리가 안 나요. 뒤에 다른 사람이 지나가지 않게 해 주세요.</p>
+    </section>
+    <section class="gd-card">
+      <svg viewBox="0 0 320 240" class="gd-ill" aria-hidden="true">
+        <rect x="110" y="20" width="100" height="190" rx="16" fill="#111" stroke="#3a3a46" stroke-width="3"/>
+        <rect x="120" y="40" width="80" height="70" rx="6" fill="#2a2a33"/><circle cx="160" cy="68" r="12" fill="#f3f3f5"/><rect x="148" y="82" width="24" height="24" rx="8" fill="#f3f3f5"/>
+        <rect x="128" y="122" width="64" height="8" rx="4" fill="#3ddc84"/><rect x="128" y="138" width="44" height="8" rx="4" fill="#ffd23f"/>
+        <path d="M150 168 l8 8 l16 -18" stroke="#3ddc84" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <text x="160" y="232" fill="#a2a2ae" font-size="12" text-anchor="middle">🔒 영상은 이 폰 안에서만</text>
+      </svg>
+      <h2>④ 카메라를 <b>허용</b>해 주세요</h2>
+      <p>«카메라 접근 허용?»이 뜨면 «허용»을 눌러요.</p>
+      <p class="gd-small">🔒 카메라 영상은 이 폰 안에서만 분석하고 서버로 보내지 않아요. «다시 보기»용 녹화도 폰 메모리에만 잠깐 있다가 지워져요. «내 영상 저장·공유»를 직접 누를 때만 영상이 내가 고른 곳으로 가요. 이름·연락처·점수도 보내지 않아요. <a href="privacy.html" target="_blank">자세히</a></p>
+    </section>
+  </div></div>
+  <div class="gd-dots" id="gdDots"><i></i><i></i><i></i><i></i></div>
+  <div class="gd-nav"><button id="gdPrev">이전</button><button class="pri" id="gdNext">다음</button></div>
+  <button class="pri" id="go" hidden disabled>준비 중…</button>
+</div>
+
+<!-- 잠긴 칸 확인 -->
+<div class="modal" id="confirm" hidden>
+  <div class="card">
+    <h2 id="confirmTitle">바로 시험 볼까요?</h2>
+    <p id="confirmText">원래 속도로 한 번 맞히면 여기까지 한꺼번에 열려요.</p>
+    <div class="row"><button id="cNo">아니요</button><button class="pri" id="cYes">시험 보기</button></div>
+  </div>
+</div>
+
+<!-- 화면 한 번 눌러 달라 (소리·영상 재생 허락) -->
+<div class="modal" id="tapbox" hidden>
+  <div class="card"><h2>화면을 한 번 눌러 주세요</h2><p>선생님 영상을 다시 틀게요.</p><button class="pri" id="tapBtn">계속하기</button></div>
+</div>
+
+<!-- 카메라를 못 열었을 때 -->
+<div class="modal" id="fail" hidden>
+  <div class="card"><h2>카메라를 켜지 못했어요</h2><p id="failText"></p><p class="note">카메라 영상은 폰 밖으로 나가지 않아요.</p>
+  <button class="pri" id="kakaoBtn" hidden>외부 브라우저로 열기</button>
+  <div class="row"><button id="failClose">닫기</button><button id="reloadBtn">새로고침</button></div></div>
+</div>
+
+<!-- 완주 · 저장 · 신청 -->
+<div class="modal" id="savebox" hidden>
+  <div class="card">
+    <h2 id="saveTitle">후렴 완주! 💃</h2>
+    <p id="saveText">방금 춘 후렴 전체(위 선생님 · 아래 나)를 내 폰에 저장할 수 있어요.</p>
+    <video id="saveVideo" playsinline controls muted hidden></video>
+    <p class="note" id="saveHint" hidden>«파일로 저장»을 누르면 파일 앱 › 다운로드에 저장돼요. 파일 앱에서 열어 공유 → «동영상 저장»을 누르면 사진첩으로 가요.</p>
+        <button class="pri" id="saveMeBtn" hidden>내 춤만 저장·공유</button>
+    <a id="dlMeBtn" hidden class="dl">내 춤만 · 파일로 저장</a>
+    <button class="pri" id="saveBtn">선생님과 같이 저장·공유</button>
+    <a id="dlBtn" hidden class="dl">선생님과 같이 · 파일로 저장</a>
+    <a id="ctaBtn" hidden><button class="pri" style="width:100%">11/10 NAYE 현장 클래스 신청하기 →</button></a>
+    <button class="pri" id="againBtn" hidden>다시 도전</button>
+    <button id="nextBtn">마치기</button>
+  </div>
+</div>
+
+<div id="stagebar"></div>
+<div class="stage">
+  <div class="pane"><span class="tag">선생님 · NAYE</span><div id="tbox"><video id="teacher" playsinline preload="auto"></video><canvas id="teacherCanvas"></canvas></div><div id="tscore"></div><div id="big"></div></div>
+<video id="nayeSay" playsinline preload="none"></video>
+  <div class="pane me"><div class="mehint">📱 «시작»을 누르면<br>여기에 내 모습이 나와요</div><span class="tag" id="userTag">나</span><video id="user" playsinline muted></video><canvas id="userCanvas" class="mirror"></canvas>
+    <div id="score"><b id="live">–</b><small id="pass"></small></div><div class="bar"><i id="prog"></i></div></div>
+</div>
+<button id="stopFab">멈춤</button>
+<div class="ctl">
+  <div class="lhead"><span id="lTitle">차근차근 배우기</span><small id="lCount"></small></div>
+  <div class="lbar"><i id="lBar"></i></div>
+  <div class="steps" id="steps"></div>
+  <button class="pri" id="start" disabled>준비 중…</button>
+  <div class="lopt"><span>난이도</span><div class="seg" id="thrSeg"><button data-v="55">쉬움</button><button data-v="65">표준</button><button data-v="75">어려움</button></div>
+    <select id="thr" hidden><option value="55">쉬움반</option><option value="65" selected>표준반</option><option value="75">어려운반</option></select>
+    <button id="reset">처음부터 다시</button></div>
+  <span class="dev"><label>보기 <select id="focus"><option value="all">전신</option><option value="upper">상체만</option><option value="lower">하체만</option></select></label></span>
+  <span class="dev"><label>입력 <select id="src"><option value="cam">내 카메라</option><option value="test-good">시험: 선생님 영상</option><option value="test-bad">시험: 다른 춤</option><option value="test-blonde">시험: 금발 멤버</option></select></label></span>
+  <span class="dev"><button id="skip">건너뛰기</button></span>
+  <div id="tip" hidden></div>
+  <div id="hw"></div>
+  <div id="msg">불러오는 중…</div>
+</div>
+<script type="module" src="app.js?v=61"></script>
+</body>
+</html>
