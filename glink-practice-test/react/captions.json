@@ -1,0 +1,21 @@
+{
+ "_note": "나예 한마디 자막(S0-15) · 근거 = 받아쓰기_전체_small.tsv(작은 모델) + whisper large-v3-turbo 다시 받아쓰기(11-11) + 촬영 대본(촬영매뉴얼_20261110 ⑩) 셋이 맞는 것만 · 확인 안 된 것은 빈칸",
+ "ko_hello": "안녕하세요, 이 안무 만든 NAYE예요. 저희 같이 춰 봐요!",
+ "ko_start": "폰 세워 두고, 두 걸음 뒤로! 시작할게요.",
+ "ko_s90": "와, 완벽해요! 저랑 거의 똑같아요.",
+ "ko_s70": "거의 다 왔어요. 한 번 더!",
+ "ko_s50": "좋은 출발이에요. 천천히 같이 해 봐요.",
+ "ko_low": "괜찮아요. 처음엔 다 그래요. 쉬운 버전부터 천천히 해 볼까요?",
+ "ko_again": "아까보다 좋아졌어요. 다시 가 볼까요?",
+ "ko_done": "후렴 끝까지 다 했어요. 진짜 잘했어요!",
+ "ko_beat": "내 싱크로율, 이길 수 있어요?",
+ "en_hello": "Hi, I'm NAYE. I made this dance. Let's do it together!",
+ "en_start": "Stand your phone up. Take two steps back. Here we go!",
+ "en_s90": "Wow, perfect! You move just like me.",
+ "en_s70": "Almost there! One more time!",
+ "en_s50": "Great start! Let's take it slow together.",
+ "en_low": "It's okay. Everyone starts here. Try the easy version first?",
+ "en_again": "Better than last time! Shall we go again?",
+ "en_done": "You finished the whole chorus! Amazing job!",
+ "en_beat": ""
+}

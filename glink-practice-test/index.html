@@ -59,6 +59,9 @@ label{color:var(--dim)}
 /* 강사 한마디 영상 */
 #nayeSay{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(44vw,240px);aspect-ratio:9/16;object-fit:cover;border-radius:var(--r-l);box-shadow:0 10px 40px #000a;border:2px solid var(--acc);z-index:40;display:none;background:#000;animation:sayIn .35s var(--spring) both}
 body.playing #nayeSay{width:min(54vw,280px)}
+#nayeCap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(14px,env(safe-area-inset-bottom)) + min(44vw,240px)*16/9 + 10px);width:max-content;max-width:min(86vw,380px);padding:7px 12px;border-radius:12px;background:#000d;color:#fff;font:700 15px/1.35 -apple-system,sans-serif;text-align:center;z-index:41;box-shadow:0 4px 18px #0008;word-break:keep-all}
+body.playing #nayeCap{bottom:calc(max(14px,env(safe-area-inset-bottom)) + min(54vw,280px)*16/9 + 10px)}
+#nayeCap[hidden]{display:none}
 @keyframes sayIn{from{opacity:0;transform:translateX(-50%) translateY(28px) scale(.9)}to{opacity:1;transform:translateX(-50%)}}
 /* 큰 글자(3·2·1 · 안내 · 통과/다시 · 싱크로율) */
 #big{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 4vw;font-size:min(13vw,16vh,96px);line-height:1.15;font-weight:800;text-shadow:0 0 2px #000,0 2px 6px #000c,0 4px 24px #000;z-index:7;pointer-events:none;word-break:keep-all;font-variant-numeric:tabular-nums}
@@ -263,9 +266,9 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
 #spChal{position:relative;overflow:hidden;font-size:20px;box-shadow:inset 0 1px 0 #fff6,0 8px 24px #ff9f4355}
 #spChal::after{content:"";position:absolute;top:0;bottom:0;left:-40%;width:30%;background:linear-gradient(100deg,transparent,#fff8,transparent);animation:sheen 3.2s 1s ease-in-out infinite;pointer-events:none}
 @keyframes sheen{0%,70%{transform:skewX(-20deg)}100%{transform:translateX(520%) skewX(-20deg)}}
-.sp-two{display:flex;gap:10px}
-.sp-two>*{flex:1 1 0;min-width:0;margin:0;font-size:min(4.3vw,17px);white-space:nowrap}
-.sp-two .sp-go{background:#ffffff1a;border:1px solid #ffffff38;color:#fff;font-weight:700;padding:14px 8px}
+.sp-two{display:flex;gap:8px;justify-content:center}   /* S0-17: 큰 노란 버튼은 «챌린지» 하나 · 나머지는 작은 줄(누르는 곳은 44px 유지) */
+.sp-two>*{flex:0 1 auto;min-width:0;margin:0;font-size:14px;white-space:nowrap}
+.sp-two .sp-go{background:transparent;border:1px solid #ffffff40;color:#fff;font-weight:600;padding:0 16px;min-height:44px;border-radius:999px}
 .sp-apply{display:flex;align-items:center;justify-content:center;border:2px solid var(--acc);color:var(--acc);border-radius:var(--r-s);font-weight:700;text-decoration:none;box-sizing:border-box}
 .sp-class{margin:0;text-align:center;color:#e6e6ea;font-size:17px;line-height:1.5}
 .sp-class b{color:var(--ink)}
@@ -351,6 +354,8 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
     <p class="sp-sub">NAYE가 가르치고, 폰 카메라가 채점해요</p>
     <p class="warn" id="inapp" hidden></p>
     <button id="kakaoOpen" class="pri" hidden>외부 브라우저로 열기</button>
+    <a id="chromeOpen" hidden><button class="pri" style="width:100%">크롬으로 열기</button></a>
+    <button id="copyLink" hidden>링크 복사</button>
     <p class="sp-cap">🎵 곡 고르기 <span>옆으로 밀면 더 있어요</span></p>
     <div class="sp-course" id="lessonRow" role="group" aria-label="곡 고르기"></div>
     <button class="pri sp-go" id="spChal">🔥 <span class="chn">챌린지</span><small>카메라 켜고 바로 춰요 · 85%면 🔥나예급 · 무료</small></button>
@@ -360,6 +365,7 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
     </div>
     <p class="sp-hw" id="spHw"></p>
     <p class="sp-eta sp-safe">📱 폰 세워 두고 2m 뒤에서 · 내 영상은 폰 밖으로 안 나가요</p>
+    <p class="sp-eta" id="spSize" hidden></p>
     <p class="sp-eta" id="eta"></p>
     <p class="sp-links"><button class="sp-link" id="spHello">▶ 나예 선생님 인사</button><a class="sp-link" href="guide.html">채점 방법 · 사용법</a><button class="sp-link" id="spGuide" hidden>설치 가이드</button></p>
   </div>
@@ -439,9 +445,15 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
 </div>
 
 <!-- 카메라를 못 열었을 때 -->
+<!-- 불러오기 실패 · 다시 시도(S0-13) — 첫 화면(z 30)보다 위 -->
+<div class="modal" id="loadErr" hidden style="z-index:50">
+  <div class="card"><h2>불러오지 못했어요</h2><p id="loadErrText">인터넷 연결을 확인하고 다시 시도해 주세요.</p>
+  <button class="pri" id="retryBtn">다시 시도</button></div>
+</div>
 <div class="modal" id="fail" hidden>
   <div class="card"><h2>카메라를 켜지 못했어요</h2><p id="failText"></p><p class="note">카메라 영상은 폰 밖으로 나가지 않아요.</p>
   <button class="pri" id="kakaoBtn" hidden>외부 브라우저로 열기</button>
+  <a id="chromeOpen2" hidden><button class="pri" style="width:100%">크롬으로 열기</button></a>
   <div class="row"><button id="failClose">닫기</button><button class="pri" id="reloadBtn">새로고침</button></div></div>
 </div>
 
@@ -466,6 +478,7 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
 <div class="stage">
   <div class="pane"><span class="tag">선생님 · NAYE</span><div id="tbox"><video id="teacher" playsinline preload="auto"></video><canvas id="teacherCanvas"></canvas></div><div id="tscore"></div><div id="big"></div></div>
 <video id="nayeSay" playsinline preload="none"></video>
+<div id="nayeCap" hidden></div>
   <div class="pane me"><div class="mehint">📱 노란 버튼을 누르면 <br>여기에 내 모습이 나와요</div><span class="tag" id="userTag">나</span><video id="user" playsinline muted></video><canvas id="userCanvas" class="mirror"></canvas>
     <div id="score"><b id="live"></b><small id="pass"></small></div></div>
 </div>
@@ -485,6 +498,6 @@ body.loading::after{content:"";position:fixed;left:50%;top:calc(50% - 76px);widt
   <div id="hw"></div>
   <div id="msg">불러오는 중…</div>
 </div>
-<script type="module" src="app.js?v=64"></script>
+<script type="module" src="app.js?v=75"></script>
 </body>
 </html>

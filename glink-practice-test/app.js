@@ -17,17 +17,26 @@ if (DEV || DEMO) document.body.classList.add("devmode");
 let SWITCHED = false; try { SWITCHED = sessionStorage.getItem("glink_sw") === "1"; sessionStorage.removeItem("glink_sw"); } catch {}
 // ── 클래스의 레슨 목록(11-11) ── 강사 한 명의 클래스에 곡 여러 개 · 곡마다 영상(음원 포함)·정답지·스텝·주의점·숙제
 // tips = 스텝 번호(n)별 강사 주의점(Glow 는 11/10 촬영 S6 에서 나예가 한 말) · hw = 숙제(need = 끝내야 하는 칸 수)
-const LESSONS = {
-  orig: { title: "Glow Connection", sub: "원래 안무", artist: "GLINK", video: "orig.mp4?v=1", pose: "orig_pose.json?v=1", from: 5, secs: 15,
-    tips: { 5: "첫 «쿵, 차»에서 왼발이 앞으로 가요. 오른발을 찍을 땐 뒤꿈치를 아웃!", 6: "«반짝반짝»은 얼굴 앞이 아니라 머리 → 어깨를 터치해요.", 7: "«글로우» 기지개는 손바닥을 펴지 말고 주먹 쥐고 쭉! 오른발은 옆으로 찍어요." },
-    hw: { text: "수업 전까지 스텝 2까지 통과하기", need: 2 } },
-  easy: { title: "Glow Connection", sub: "쉬운 안무", artist: "GLINK", video: "easy.mp4?v=2", pose: "easy_pose.json?v=1", from: 5, secs: 15, tips: {}, hw: { text: "15초 챌린지 한 번 끝까지 하기", need: 0, ch: true } },
-  bed: { title: "Bed Galaxy", sub: "후렴", artist: "온혁", video: "bed.mp4?v=1", pose: "bed_pose.json?v=1", secs: 23, bpm: 103.09, steps: [{"n":1,"start":0.132,"end":4.788},{"n":2,"start":4.788,"end":9.444},{"n":3,"start":9.444,"end":14.1},{"n":4,"start":14.1,"end":18.757},{"n":5,"start":18.757,"end":23.413}], tips: {}, hw: { text: "수업 전까지 스텝 3까지 통과하기", need: 3 } },
-  kpop1: { title: "체포하겠어", sub: "아일릿 커버", artist: "아일릿", video: "kpop1.mp4?v=1", pose: "kpop1_pose.json?v=1", secs: 31, bpm: 145.75, steps: [{"n":1,"start":0.262,"end":3.555},{"n":2,"start":3.555,"end":6.849},{"n":3,"start":6.849,"end":10.142},{"n":4,"start":10.142,"end":13.435},{"n":5,"start":13.435,"end":16.729},{"n":6,"start":16.729,"end":20.022},{"n":7,"start":20.022,"end":23.315},{"n":8,"start":23.315,"end":26.608},{"n":9,"start":26.608,"end":31.45}], tips: {}, hw: { text: "수업 전까지 스텝 3까지 통과하기", need: 3 } },
-  kpop2: { title: "백화요란", sub: "리센느 커버", artist: "리센느", video: "kpop2.mp4?v=1", pose: "kpop2_pose.json?v=1", secs: 16, bpm: 129.5, steps: [{"n":1,"start":0.08,"end":3.787},{"n":2,"start":3.787,"end":7.493},{"n":3,"start":7.493,"end":11.2},{"n":4,"start":11.2,"end":15.65}], tips: {}, hw: { text: "16초 챌린지 한 번 끝까지 하기", need: 0, ch: true } },
-};
-let COURSE = "orig"; try { const c = Q.get("l") || Q.get("course") || localStorage.getItem("glink_course"); if (c && LESSONS[c]) COURSE = c; } catch {}
+// 레슨 정보 = lessons/index.json(순서) + lessons/<id>/lesson.json(칸 정의 = 기획안 부록 A-3 · 영상·정답지 경로는 앱 폴더 기준).
+// 레슨 추가 = 폴더 하나 + index 한 줄 · off: true 면 첫 화면 줄과 직접 링크(?l=)에서 사라진다(내림 = 플랫폼/takedown.sh).
+const LESSONS = {}, OFF = new Set();   // OFF = 내려 둔 레슨(S0-09 · 첫 화면 줄에도 직접 링크에도 안 나온다)
+try {
+  const idx = await fetch("lessons/index.json?v=1").then(r => r.json());
+  const all = await Promise.all(idx.lessons.map(id => fetch(`lessons/${id}/lesson.json?v=1`).then(r => r.json()).catch(() => null)));
+  all.forEach((l, i) => { if (l && !l.off) LESSONS[idx.lessons[i]] = l; else if (l?.off) OFF.add(idx.lessons[i]); });
+} catch (e) {}
+if (!Object.keys(LESSONS).length) { document.body.textContent = "레슨 정보를 불러오지 못했어요. 새로고침해 주세요."; throw new Error("lessons"); }
+{ const want = Q.get("l") || Q.get("course");   // 내려 둔 레슨을 직접 링크로 열면 안내 화면만 보여 주고 멈춘다
+  if (want && OFF.has(want)) {
+    const c = (Q.get("c") || "").toLowerCase(), keep = /^[a-z0-9_]{1,20}$/.test(c) ? `?c=${c}` : "";
+    document.body.innerHTML = `<div class="modal" style="display:flex"><div class="card"><h2>이 레슨은 지금 볼 수 없어요</h2><p>잠시 내려 둔 레슨이에요. 다른 레슨으로 연습해 주세요.</p><a href="./${keep}"><button class="pri" style="width:100%">다른 레슨 보기</button></a></div></div>`;
+    throw new Error("lesson off");
+  } }
+let COURSE = LESSONS.orig ? "orig" : Object.keys(LESSONS)[0]; try { const c = Q.get("l") || Q.get("course") || localStorage.getItem("glink_course"); if (c && LESSONS[c]) COURSE = c; } catch {}
 const CS = LESSONS[COURSE], CH_NAME = `${CS.secs}초 챌린지`;
+const BAND_URL = "kiserama.com/glink-practice";   // 저장 영상 띠의 주소(한 곳에서만 고친다 · S0-06)
+// 저장·공유는 권리가 정리된 레슨만(기획안 부록 A-3 rights) — 기존 곡 비공개(cover_private)는 영상이 밖으로 퍼지지 않게 버튼을 숨긴다(S0-06 · 배포는 결정 D3 뒤)
+const SAVE_OK = ["own", "teacher_own", "cover_cleared"].includes(CS.rights);
 const BAND = `${CS.artist} «${CS.title}» 따라 추기`, FILE_PRE = CS.artist === "GLINK" ? "GLINK_따라추기" : `따라추기_${COURSE}`;   // 저장 영상 아래 띠 글자 · 파일 이름 머리(표시 · 기본 곡은 전과 같다)
 let bandFont = "";
 const STORE = (DEV || DEMO ? "glink_done_dev" : "glink_done") + "_" + COURSE + "2";
@@ -64,14 +73,28 @@ const GC = "crossnam";   // 통계(GoatCounter) 코드 · 비우면 아무것도
 // 사용 지표 (대표 결정 11-02 «신청 안 해도 이용률·머무는 시간·들어오는 횟수를 알 수 있게»)
 // GoatCounter 에 «경로» 하나씩 보낸다: /glink-practice/e/<사건>/<세부> — 이름·영상·점수 없음 · 쿠키 없음
 // 지표 사전 = 따라하기_시험판/지표사전.md
+// 통계 스위치(S0-05 · 지표 사전 «클래스 경로»): 서비스 주소(kiserama.com/glink-practice/)는 예전처럼 보낸다.
+// 그 밖(시험 주소 · 내 컴퓨터)은 STATS_ON_TEST 가 켜져 있고 링크에 클래스 코드(?c=)가 있을 때만 보낸다. c 가 있으면 경로가 /c/<c>/<레슨>/e/… 로 갈린다.
+const STATS_ON_TEST = false;   // 켜는 것은 결정 대장 D2 답 + 방침 문구 승인 뒤(백로그 S0-35) · 배포 스크립트가 false 인지 확인한다
+const APP_VER = "75";          // 통계 «제목(t)»에 싣는 앱 판 번호 = index.html 의 app.js?v= 와 같게
+const codeOf = (k) => { const v = (Q.get(k) || "").toLowerCase(); return /^[a-z0-9_]{1,20}$/.test(v) ? v : ""; };   // 소문자 · 숫자 · 밑줄 20자
+const CLS = codeOf("c"), CHN = codeOf("ch");   // 클래스 코드 · 링크를 뿌린 곳(kakao 등)
+const IS_PROD = location.hostname === "kiserama.com" && /^\/glink-practice\//.test(location.pathname);
 function ping(e, sub = "") {
-  if (DEV || DEMO || !GC || /^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.pathname.includes("-test")) return;   // 내 컴퓨터 미리보기는 통계에 안 섞는다
+  if (DEV || DEMO || !GC) return;
+  if (!IS_PROD && !(STATS_ON_TEST && CLS)) return;   // 시험 주소 · 미리보기: 스위치가 꺼졌거나 클래스 코드가 없으면 0건
   try {
-    const p = `/glink-practice/e/${e}${sub ? "/" + String(sub).replace(/[^\w가-힣~.-]/g, "_") : ""}`;
-    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&q=${encodeURIComponent("utm_source=" + firstTouch())}&r=${encodeURIComponent(firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+    const tail = `e/${e}${sub ? "/" + String(sub).replace(/[^\w가-힣~.-]/g, "_") : ""}`;
+    const p = CLS ? `/glink-practice/c/${CLS}/${COURSE}/${tail}` : `/glink-practice/${tail}`;
+    const q = "utm_source=" + firstTouch() + (CHN ? "&utm_campaign=" + CHN : "");
+    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&t=${encodeURIComponent("v" + APP_VER)}&q=${encodeURIComponent(q)}&r=${encodeURIComponent(firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
     fetch(url, { mode: "no-cors", keepalive: true, cache: "no-store" }).catch(() => { new Image().src = url; });
   } catch {}
 }
+// 폰당 한 번만 보내는 사건(S0-07): 이 폰 저장소에 표시를 남긴다 · 저장소를 지우면 다시 한 번
+const pingOnce = (name, scope, sub = "") => { const k = `glink_ev_${name}_${scope}`; try { if (localStorage.getItem(k)) return; localStorage.setItem(k, "1"); } catch {} ping(name, sub); };
+// 오류 사건(S0-08): err/<종류> = load(영상·정답지) · model(관절 모델) · init(그 밖) · 카메라는 예전 이름 cam_fail 그대로 · 한 번 열 때 종류마다 한 번
+const errSent = new Set(); const errOnce = (kind) => { if (errSent.has(kind)) return; errSent.add(kind); ping("err", kind); };
 const bucketMin = (ms) => { const m = ms / 60000; return m < 1 ? "0-1m" : m < 3 ? "1-3m" : m < 10 ? "3-10m" : m < 20 ? "10-20m" : m < 40 ? "20-40m" : "40m+"; };
 // 몇 번째 방문인지(이 폰 기준) · 머문 시간 · 실제로 춘 시간
 let visitNo = 1; try { visitNo = Math.max(1, (+localStorage.getItem("glink_visits") || 0) + (SWITCHED ? 0 : 1)); localStorage.setItem("glink_visits", String(visitNo)); } catch {}
@@ -380,7 +403,12 @@ async function openCamera(myGen) {
   return true;
 }
 function closeCamera() { camStream?.getTracks().forEach(t => t.stop()); camStream = null; if (user.srcObject) user.srcObject = null; }
-function showFail(m) { $("failText").textContent = m; $("kakaoBtn").hidden = !/KAKAOTALK/i.test(navigator.userAgent); $("fail").hidden = false; }
+// 안드로이드 앱 안 브라우저(카톡 빼고 · 카톡은 자체 «외부 브라우저로 열기») → «크롬으로 열기»(S0-16)
+// 형식 = 크롬 공식 문서 https://developer.chrome.com/docs/android/intents (11-11 확인) · 누른 순간에만 열린다 · 크롬이 없으면 같은 주소로 돌아온다
+const androidInApp = () => /Android/i.test(navigator.userAgent) && isInApp() && !/KAKAOTALK/i.test(navigator.userAgent);
+const chromeIntent = () => { const u = new URL(location.href); return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(location.href)};end`; };
+function showChromeOpen(id) { const a = $(id); if (!a) return; const on = androidInApp(); a.hidden = !on; if (on) { a.href = chromeIntent(); a.onclick = () => ping("chrome_open"); } }
+function showFail(m) { $("failText").textContent = m; $("kakaoBtn").hidden = !/KAKAOTALK/i.test(navigator.userAgent); showChromeOpen("chromeOpen2"); $("fail").hidden = false; }
 function camFailMessage() {
   if (camErr === "noapi" || isInApp()) return inAppHow();
   if (camErr === "NotAllowedError" || camErr === "SecurityError") return /Android/i.test(navigator.userAgent)
@@ -536,6 +564,7 @@ function teacherAudioTrack() {
   } catch { return null; }
 }
 function startCompose(mirror, badge = "") {
+  ev("band", { band: BAND, url: BAND_URL });   // 시험용 기록(window.EV · 밖으로 안 나감): 이번 저장 영상 띠에 들어갈 글자
   const cv = document.createElement("canvas"); cv.width = 720; cv.height = 1280;
   const c = cv.getContext("2d"), st = cv.captureStream ? cv.captureStream(30) : null;
   if (!st || !window.MediaRecorder) return null;
@@ -555,7 +584,7 @@ function startCompose(mirror, badge = "") {
       c.fillStyle = "#ffd23f"; c.font = "bold 34px -apple-system, sans-serif";
       if (!bandFont) bandFont = c.measureText(BAND).width > 696 ? "bold 28px -apple-system, sans-serif" : "bold 34px -apple-system, sans-serif";   // 띠 글자가 화면(720)보다 길 때만 한 단계 작게(표시)
       c.font = bandFont; c.textAlign = "center"; c.fillText(BAND, 360, badge ? 1236 : 1255);
-      if (badge) { c.font = "26px -apple-system, sans-serif"; c.fillStyle = "#e6e6ea"; c.fillText("kiserama.com/glink-practice", 360, 1270);
+      if (badge) { c.font = "26px -apple-system, sans-serif"; c.fillStyle = "#e6e6ea"; c.fillText(BAND_URL, 360, 1270);
         c.textAlign = "right"; c.fillStyle = "#ffd23f"; c.font = "bold 40px -apple-system, sans-serif"; c.fillText(badge, 700, 50); }
       c.textAlign = "left"; } catch {}
     requestAnimationFrame(draw); })();
@@ -620,9 +649,10 @@ function offerSave(blob, label, mine, o = {}) {
     const link = CTA_URL && CLASS_OPEN ? CTA_URL + encodeURIComponent(`${CTA_CODE}_${firstTouch()}`) : "";
     $("ctaBtn").hidden = !link; if (link) { $("ctaBtn").href = link; $("ctaBtn").target = "_blank"; $("ctaBtn").onclick = () => ping("cta"); }
     const urls = [];
+    if (!SAVE_OK) { blob = null; mine = null; }   // 기존 곡 레슨: 저장·공유·파일 버튼을 하나도 붙이지 않는다
     if (blob) urls.push(wireSave($("saveBtn"), $("dlBtn"), blob, `${FILE_PRE}_${label.replace(/\s/g, "")}`, "save"));
     if (mine) urls.push(wireSave($("saveMeBtn"), $("dlMeBtn"), mine, `${FILE_PRE}_내춤`, "save_me"));
-    $("saveText").textContent = o.text || `🏆 ${plan.length}칸 전부 통과! ` + (blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.");
+    $("saveText").textContent = !SAVE_OK ? `${o.textNoSave ? o.textNoSave + " " : ""}이 곡은 곡 권리 때문에 영상 저장을 쉬고 있어요. 다시 보기는 이 화면에서만 돼요.` : o.text || `🏆 ${plan.length}칸 전부 통과! ` + (blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.");
     box.hidden = false;
     const close = (v) => { box.hidden = true; vid.removeAttribute("src"); vid.load(); urls.forEach(u => URL.revokeObjectURL(u)); res(v); };
     $("againBtn").hidden = !o.again; if (o.again) { $("againBtn").textContent = o.again; $("againBtn").onclick = () => { unlockMedia(); close("again"); }; }
@@ -729,6 +759,14 @@ async function runItem(myGen, testOut = false) {
 
 // ── 시작 · 멈춤 ──────────────────────────────────────────────────────
 let wakeLock = null;
+// 화면이 다시 보이면 꺼짐 방지를 다시 건다(S0-18 · 숨기면 브라우저가 풀어 버린다 · https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API)
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || !running || (wakeLock && !wakeLock.released)) return;
+  try { wakeLock = await navigator.wakeLock?.request("screen"); ev("wake_again"); } catch {}
+});
+// 첫 화면 «와이파이 권장 · 약 ○MB» = sizes.json(make_sizes.py 가 ls 크기로 만든다)의 공통 + 이 레슨 바이트 합
+fetch("sizes.json?v=1").then(r => r.json()).then(z => { const sum = [...Object.values(z.common || {}), ...Object.values(z.lessons?.[COURSE] || {})].reduce((a, b) => a + b, 0);
+  if (sum > 0) { $("spSize").textContent = `📶 와이파이 권장 · 이 곡 처음 열 때 약 ${Math.round(sum / 1e6)}MB`; $("spSize").hidden = false; } }).catch(() => {});
 async function beginRun() {
   document.body.classList.add("playing"); running = true; const myGen = ++gen; practiceOn();
   try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
@@ -736,6 +774,7 @@ async function beginRun() {
   const ok = await setSource(myGen);
   if (myGen !== gen || !running) { if (!running) closeCamera(); return null; }
   if (!ok) { ping("cam_fail", camErr || "unknown"); const m = camFailMessage(); endRun(m); showFail(m); return null; }
+  { const due = Date.parse(CS.hw?.due || ""); if (due && Date.now() > due) pingOnce("review_start", `${CLS || "-"}_${COURSE}`); }   // 숙제 마감 뒤 첫 연습 = 복습
   if (!(await placeCheck(myGen))) return null;
   return myGen;
 }
@@ -782,12 +821,17 @@ async function run() {
 // ── 나예가 말 거는 앱(11/10 촬영 S7) ── 점수·시작·다시·완주 때 나예 영상 한마디 · 한국어 폰이면 한국어, 아니면 영어
 const SAY_LANG = (navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
 const sayKey = (n) => n >= 85 ? "s90" : n >= 70 ? "s70" : n >= 50 ? "s50" : "low";
+let capsP = null;   // 한마디 자막(S0-15) = react/captions.json · 확인 안 된 대사는 빈칸이라 안 보인다
 async function nayeSay(key, maxMs = 7000) {
   const v = $("nayeSay"); if (!v) return;
+  capsP = capsP || fetch("react/captions.json?v=1").then(r => r.json()).catch(() => ({}));
+  const cap = (await capsP)[`${SAY_LANG}_${key}`] || "", capEl = $("nayeCap");
   v.src = `react/${SAY_LANG}_${key}.mp4?v=1`; v.style.display = "block"; v.muted = false;
   try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (_) { v.style.display = "none"; return; } }
   ping("say", key);
+  if (capEl && cap) { capEl.textContent = cap; capEl.hidden = false; ev("cap", { key, cap }); }
   await new Promise(r => { const t = setTimeout(r, maxMs); v.onended = () => { clearTimeout(t); r(); }; });
+  if (capEl) capEl.hidden = true;
   v.pause(); v.style.display = "none"; v.removeAttribute("src"); v.load();
 }
 // ── N초 챌린지 ── 후렴 전체를 한 번 추고 «나예 싱크로율»을 받는다 · 위 나예·아래 나 영상(점수·주소 박힘)을 저장(11-05 대표 결정 «앱 자체를 매력적으로»)
@@ -821,7 +865,7 @@ async function challenge() {
   const slow = sync < 60 && chSpeed === 1;
   const diff = chPrev != null && chPrevSpeed === chSpeed ? sync - chPrev : null; chPrev = sync; chPrevSpeed = chSpeed;   // 같은 속도로 다시 췄을 때만 비교(표시)
   const diffTxt = diff > 0 ? `지난번보다 +${diff}%p 올랐어요 📈 ` : diff < 0 ? "지난번이 조금 더 높았어요. 한 번 더 해 봐요! " : "";
-  const r = await offerSave(lastClip, `챌린지_${sync}`, mine, { title: `${grade(sync)}\n싱크로율 ${sync}%`, text: `${diffTxt}${syncWord(sync)} 위 나예 · 아래 나 영상을 저장해서 친구한테 도전장을 보내 봐요.`, again: slow ? "0.75배로 다시 도전" : sync >= 85 ? "한 번 더 추기" : `다시 도전 · ${sync >= 70 ? 85 : sync >= 50 ? 70 : 50}% 넘기` });
+  const r = await offerSave(lastClip, `챌린지_${sync}`, mine, { title: `${grade(sync)}\n싱크로율 ${sync}%`, textNoSave: `${diffTxt}${syncWord(sync)}`, text: `${diffTxt}${syncWord(sync)} 위 나예 · 아래 나 영상을 저장해서 친구한테 도전장을 보내 봐요.`, again: slow ? "0.75배로 다시 도전" : sync >= 85 ? "한 번 더 추기" : `다시 도전 · ${sync >= 70 ? 85 : sync >= 50 ? 70 : 50}% 넘기` });
   lastClip = null;
   if (myGen !== gen) return;
   endRun("한 스텝씩 천천히 배우려면 아래 노란 버튼을 눌러요.");
@@ -837,6 +881,8 @@ async function testOut(i) {
 
 const openKakaoExternal = () => { location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(location.href); };
 $("kakaoBtn").onclick = openKakaoExternal; $("kakaoOpen").onclick = openKakaoExternal;
+$("copyLink").onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(location.href); ok = true; } catch {}   // 크롬으로 안 열릴 때 주소를 복사해서 크롬에 붙여 넣는다
+  $("copyLink").textContent = ok ? "링크를 복사했어요 · 크롬 주소창에 붙여 넣어 주세요" : location.href; ping("copy_link", ok ? "ok" : "fail"); };
 $("failClose").onclick = () => { $("fail").hidden = true; };
 $("reloadBtn").onclick = () => location.reload();
 // ── 오픈 화면 → 설치 가이드 → 시작 (대표 결정 11-02 «실제 앱처럼 오픈 화면 · 어디쯤 설치하면 좋은지 가이드») ──
@@ -869,7 +915,7 @@ function openGuide() { $("splash").hidden = true; $("spVid").pause(); $("guide")
 let inAppWarned = false, loadFail = false;   // loadFail = 불러오기 실패(«불러오는 중» 화면이 오류 안내를 가리지 않게)
 function camGate(btn) {   // 앱 안 브라우저면 카메라 고를 때 한 번만 알린다 → false = 이번 누름은 안내만
   if (!(isInApp() || !navigator.mediaDevices) || inAppWarned) return true;
-  inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent);
+  inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent); showChromeOpen("chromeOpen"); $("copyLink").hidden = !androidInApp();
   btn.textContent = "그래도 여기서 해 보기"; ping("inapp_warn"); return false;
 }
 $("spChal").onclick = async () => {
@@ -913,7 +959,7 @@ const drawHw = () => { const ok = hwDone();
   const prog = !ok && !CS.hw.ch && CS.hw.need > 1 ? ` · ${[...Array(CS.hw.need).keys()].filter(i => done.has(i)).length}/${CS.hw.need}` : "";
   const t = ok ? `✅ 숙제 완료! · ${CS.hw.text}` : `📝 클래스 숙제 · ${CS.hw.text}${prog}`;
   $("spHw").textContent = t; $("hw").textContent = t; $("spHw").classList.toggle("ok", ok); $("hw").classList.toggle("ok", ok);
-  if (hwWas === false && ok) { hwJust = true; $("hw").classList.add("new"); $("spHw").classList.add("new"); }
+  if (hwWas === false && ok) { hwJust = true; $("hw").classList.add("new"); $("spHw").classList.add("new"); pingOnce("hw_done", `${CLS || "-"}_${COURSE}`); }
   hwWas = ok; };
 document.querySelectorAll(".chn").forEach(e => { e.textContent = CH_NAME; });
 try { if (localStorage.getItem(STORE + "_ch") === "1") { const sm = $("spChal").querySelector("small"); if (sm) sm.textContent = "한 번 더! 이번엔 등급 올리기 🔥"; } } catch {}   // 해 본 사람에게는 다음 목표(읽기만)
@@ -958,7 +1004,10 @@ async function init() {
     ping("inapp", /Instagram/i.test(ua) ? "ig" : /FBAN|FBAV/i.test(ua) ? "fb" : /KAKAOTALK/i.test(ua) ? "kakao" : /NAVER/i.test(ua) ? "naver" : isInApp() ? "other" : "noapi");
   }
   teacher.src = CS.video; peekVid.src = CS.video;
-  const [pj, sj] = await Promise.all([fetch(CS.pose).then(r => r.json()), fetch("steps.json").then(r => r.json())]);
+  teacher.addEventListener("error", () => errOnce("load"), { once: true });   // 선생님 영상을 못 받음(S0-08)
+  const getJson = (u) => fetch(u, { cache: initTry ? "reload" : "default" }).then(r => { if (!r.ok) throw Object.assign(new Error(`불러오기 ${r.status}`), { kind: "load" }); return r.json(); })
+    .catch(e => { throw Object.assign(e, { kind: e.kind || "load" }); });   // 정답지 · 스텝 파일을 못 받거나 깨짐 = err/load
+  const [pj, sj] = await Promise.all([getJson(CS.pose), getJson("steps.json")]);
   teacherFrames = pj.frames; fps = pj.fps; steps = CS.steps || sj.steps.filter(st => st.n >= CS.from); BPM = CS.bpm || sj.bpm || 130; plan = buildPlan();
   if (DEMO_HEART) plan = [{ from: 4, to: 4, label: "하트" }];
   else if (DEMO) plan = [{ from: 6, to: 7, label: "7~8" }, { from: 4, to: 7, label: "전체" }];
@@ -966,7 +1015,7 @@ async function init() {
   const loadPose = (async () => {
     const vision = await FilesetResolver.forVisionTasks("./vendor/wasm");
     const mk = (delegate) => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: "pose_lite.task", delegate }, runningMode: "VIDEO", numPoses: 1, outputSegmentationMasks: true });
-    try { return await mk("GPU"); } catch { return await mk("CPU"); }
+    try { return await mk("GPU"); } catch { try { return await mk("CPU"); } catch (e) { throw Object.assign(e, { kind: "model" }); } }   // 둘 다 안 되면 err/model
   })();
   await waitMeta(teacher, 4000);   // 저전력 모드에선 안 올 수 있다 → 기본 크기로 시작하고 나중에 고친다
   teacher.addEventListener("loadedmetadata", () => { tCan.width = teacher.videoWidth; tCan.height = teacher.videoHeight; layout = null; }, { once: true });
@@ -981,11 +1030,36 @@ async function init() {
   $("go").disabled = false; $("go").textContent = "카메라 켜고 시작";
   msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "노란 버튼을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
   if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
+  if (CLS) pingOnce("class_open", CLS);   // 클래스 입장(S0-07)
   if (SWITCHED) ping("course", COURSE); else ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
   if (guided) { $("spGuide").hidden = false; if (!inAppWarned) $("spGo").textContent = done.size ? "이어서 배우기" : "차근차근 배우기"; }
   requestAnimationFrame(loop);
 }
-init().catch(e => { loadFail = true; document.body.classList.remove("loading"); msg("불러오기에 실패했어요. 새로고침해 주세요. (" + e.message + ")"); $("go").textContent = "불러오기 실패 · 새로고침해 주세요"; console.error(e); });
+// 불러오기 실패 → «다시 시도»(S0-13): 새로고침 없이 init 만 다시 돈다(첫 시도는 visit 사건 전에 멈췄으므로 두 번 세지 않는다)
+const onInitFail = (e) => { errOnce(e.kind || "init"); loadFail = true; document.body.classList.remove("loading");
+  msg("불러오기에 실패했어요. «다시 시도»를 눌러 주세요."); $("go").textContent = "불러오기 실패 · 다시 시도해 주세요";
+  $("loadErrText").textContent = e.kind === "model" ? "동작 인식 모델을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요." : "영상이나 안무 정보를 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+  $("loadErr").hidden = false; console.error(e); };
+let initTry = 0;   // 다시 시도 때는 캐시를 건너뛰고 새로 받는다
+$("retryBtn").onclick = () => { initTry++; $("loadErr").hidden = true; loadFail = false; msg("다시 불러오는 중…"); ping("retry"); init().catch(onInitFail); };
+init().catch(onInitFail);
 // 처음 화면으로(11-11) — 안내·조작판에서 곡을 바꾸거나 챌린지로 돌아갈 길
 const goHome = () => { if (running) return; $("guide").hidden = true; $("splash").hidden = false; spPlay(); };
 $("homeBtn").onclick = goHome; $("gdHome").onclick = goHome;
+// ── 안드로이드 «뒤로»(S0-14) ── 깊은 화면에 들어가면 기록 한 칸(덫)을 깔고, 뒤로가 오면 앞 화면으로 한 걸음 돌아간 뒤
+// 아직 첫 화면이 아니면 덫을 다시 깐다. 첫 화면에서 뒤로는 그대로 페이지를 떠난다(덫이 없어서). 화면 안 버튼으로 닫아도 덫은 하나뿐이라 꼬이지 않는다.
+let backTrap = false;
+const vis = (id) => { const e = $(id); return !!e && !e.hidden; };
+const atHome = () => !running && !$("splash").hidden && !vis("guide") && !vis("peek") && !vis("savebox") && !vis("fail");
+const arm = () => { if (backTrap || atHome() || DEMO) return; try { history.pushState({ glinkBack: 1 }, ""); backTrap = true; } catch {} };
+function goBack() {
+  if (vis("savebox")) { $("nextBtn").click(); return "savebox"; }               // 결과 → 닫기(앞 화면)
+  if (running) { endRun("연습을 멈췄어요."); goHome(); return "stop"; }        // 연습 중 → 멈추고 레슨 홈
+  if (vis("fail")) { $("fail").hidden = true; return "fail"; }
+  if (vis("peek")) { peekClose(); return "peek"; }
+  if (vis("guide")) { if (gdI > 0) gdGo(gdI - 1); else goHome(); return "guide"; }
+  if ($("splash").hidden) { goHome(); return "panel"; }                         // 조작판 → 레슨 홈
+  return "";
+}
+window.addEventListener("popstate", () => { backTrap = false; const w = goBack(); if (w) ev("back", { w }); setTimeout(arm, 0); });
+new MutationObserver(() => setTimeout(arm, 0)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });

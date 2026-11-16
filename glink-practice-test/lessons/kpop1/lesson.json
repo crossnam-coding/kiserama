@@ -1,0 +1,67 @@
+{
+ "id": "kpop1",
+ "title": "체포하겠어",
+ "sub": "아일릿 커버",
+ "artist": "아일릿",
+ "video": "kpop1.mp4?v=1",
+ "pose": "kpop1_pose.json?v=1",
+ "secs": 31,
+ "bpm": 145.75,
+ "steps": [
+  {
+   "n": 1,
+   "start": 0.262,
+   "end": 3.555
+  },
+  {
+   "n": 2,
+   "start": 3.555,
+   "end": 6.849
+  },
+  {
+   "n": 3,
+   "start": 6.849,
+   "end": 10.142
+  },
+  {
+   "n": 4,
+   "start": 10.142,
+   "end": 13.435
+  },
+  {
+   "n": 5,
+   "start": 13.435,
+   "end": 16.729
+  },
+  {
+   "n": 6,
+   "start": 16.729,
+   "end": 20.022
+  },
+  {
+   "n": 7,
+   "start": 20.022,
+   "end": 23.315
+  },
+  {
+   "n": 8,
+   "start": 23.315,
+   "end": 26.608
+  },
+  {
+   "n": 9,
+   "start": 26.608,
+   "end": 31.45
+  }
+ ],
+ "tips": {},
+ "hw": {
+  "text": "수업 전까지 스텝 3까지 통과하기",
+  "need": 3,
+  "due": null
+ },
+ "rights": "cover_private",
+ "audio_mode": "song",
+ "audio_src": "room",
+ "off": false
+}

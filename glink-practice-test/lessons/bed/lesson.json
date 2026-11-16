@@ -1,0 +1,47 @@
+{
+ "id": "bed",
+ "title": "Bed Galaxy",
+ "sub": "후렴",
+ "artist": "온혁",
+ "video": "bed.mp4?v=1",
+ "pose": "bed_pose.json?v=1",
+ "secs": 23,
+ "bpm": 103.09,
+ "steps": [
+  {
+   "n": 1,
+   "start": 0.132,
+   "end": 4.788
+  },
+  {
+   "n": 2,
+   "start": 4.788,
+   "end": 9.444
+  },
+  {
+   "n": 3,
+   "start": 9.444,
+   "end": 14.1
+  },
+  {
+   "n": 4,
+   "start": 14.1,
+   "end": 18.757
+  },
+  {
+   "n": 5,
+   "start": 18.757,
+   "end": 23.413
+  }
+ ],
+ "tips": {},
+ "hw": {
+  "text": "수업 전까지 스텝 3까지 통과하기",
+  "need": 3,
+  "due": null
+ },
+ "rights": "own",
+ "audio_mode": "song",
+ "audio_src": "master",
+ "off": false
+}

@@ -1,0 +1,24 @@
+{
+ "id": "orig",
+ "title": "Glow Connection",
+ "sub": "원래 안무",
+ "artist": "GLINK",
+ "video": "orig.mp4?v=1",
+ "pose": "orig_pose.json?v=1",
+ "from": 5,
+ "secs": 15,
+ "tips": {
+  "5": "첫 «쿵, 차»에서 왼발이 앞으로 가요. 오른발을 찍을 땐 뒤꿈치를 아웃!",
+  "6": "«반짝반짝»은 얼굴 앞이 아니라 머리 → 어깨를 터치해요.",
+  "7": "«글로우» 기지개는 손바닥을 펴지 말고 주먹 쥐고 쭉! 오른발은 옆으로 찍어요."
+ },
+ "hw": {
+  "text": "수업 전까지 스텝 2까지 통과하기",
+  "need": 2,
+  "due": null
+ },
+ "rights": "own",
+ "audio_mode": "song",
+ "audio_src": "master",
+ "off": false
+}

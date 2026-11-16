@@ -1,0 +1,33 @@
+{
+ "note": "make_sizes.py 가 만든다 · 바이트",
+ "common": {
+  "vendor/vision_bundle.mjs": 136824,
+  "vendor/wasm/vision_wasm_internal.js": 209826,
+  "vendor/wasm/vision_wasm_internal.wasm": 9423986,
+  "pose_lite.task": 5777746,
+  "hero.mp4": 3342250,
+  "steps.json": 355
+ },
+ "lessons": {
+  "orig": {
+   "orig.mp4": 6024627,
+   "orig_pose.json": 635037
+  },
+  "easy": {
+   "easy.mp4": 6528671,
+   "easy_pose.json": 523790
+  },
+  "bed": {
+   "bed.mp4": 5782052,
+   "bed_pose.json": 500380
+  },
+  "kpop1": {
+   "kpop1.mp4": 7047863,
+   "kpop1_pose.json": 660706
+  },
+  "kpop2": {
+   "kpop2.mp4": 4852234,
+   "kpop2_pose.json": 330106
+  }
+ }
+}

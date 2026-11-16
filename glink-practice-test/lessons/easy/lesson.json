@@ -1,0 +1,21 @@
+{
+ "id": "easy",
+ "title": "Glow Connection",
+ "sub": "쉬운 안무",
+ "artist": "GLINK",
+ "video": "easy.mp4?v=2",
+ "pose": "easy_pose.json?v=1",
+ "from": 5,
+ "secs": 15,
+ "tips": {},
+ "hw": {
+  "text": "15초 챌린지 한 번 끝까지 하기",
+  "need": 0,
+  "ch": true,
+  "due": null
+ },
+ "rights": "own",
+ "audio_mode": "song",
+ "audio_src": "master",
+ "off": false
+}
