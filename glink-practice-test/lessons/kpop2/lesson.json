@@ -3,41 +3,49 @@
  "title": "백화요란",
  "sub": "리센느 커버",
  "artist": "리센느",
- "video": "kpop2.mp4?v=1",
- "pose": "kpop2_pose.json?v=1",
- "secs": 16,
- "bpm": 129.5,
+ "video": "kpop2.mp4?v=3",
+ "pose": "kpop2_pose.json?v=3",
+ "secs": 23,
+ "bpm": 96.1,
  "steps": [
   {
    "n": 1,
-   "start": 0.08,
-   "end": 3.787
+   "start": 0.1,
+   "end": 5.095
   },
   {
    "n": 2,
-   "start": 3.787,
-   "end": 7.493
+   "start": 5.095,
+   "end": 10.09
   },
   {
    "n": 3,
-   "start": 7.493,
-   "end": 11.2
+   "start": 10.09,
+   "end": 15.084
   },
   {
    "n": 4,
-   "start": 11.2,
-   "end": 15.65
+   "start": 15.084,
+   "end": 20.079
+  },
+  {
+   "n": 5,
+   "start": 20.079,
+   "end": 22.95
   }
  ],
  "tips": {},
  "hw": {
-  "text": "16초 챌린지 한 번 끝까지 하기",
+  "text": "23초 챌린지 한 번 끝까지 하기",
   "need": 0,
   "ch": true,
   "due": null
  },
  "rights": "cover_private",
  "audio_mode": "song",
- "audio_src": "room",
- "off": false
+ "audio_src": "ref_internal",
+ "off": false,
+ "audio_note": "11-16 촬영 8579(진짜 백화요란 · 원속 2번째) + 원곡 음원(유튜브 · 내부 시연용 · 외부 공개 금지) · 박자 오차 35ms",
+ "video_hfr": "kpop2_hfr.mp4?v=1",
+ "video_note": "11-16 고화질판 1080x1720 · 1배 60fps / 느린 속도 120fps(_hfr) · make_hq.py"
 }

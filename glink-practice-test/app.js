@@ -21,8 +21,8 @@ let SWITCHED = false; try { SWITCHED = sessionStorage.getItem("glink_sw") === "1
 // 레슨 추가 = 폴더 하나 + index 한 줄 · off: true 면 첫 화면 줄과 직접 링크(?l=)에서 사라진다(내림 = 플랫폼/takedown.sh).
 const LESSONS = {}, OFF = new Set();   // OFF = 내려 둔 레슨(S0-09 · 첫 화면 줄에도 직접 링크에도 안 나온다)
 try {
-  const idx = await fetch("lessons/index.json?v=1").then(r => r.json());
-  const all = await Promise.all(idx.lessons.map(id => fetch(`lessons/${id}/lesson.json?v=1`).then(r => r.json()).catch(() => null)));
+  const idx = await fetch("lessons/index.json?v=3").then(r => r.json());
+  const all = await Promise.all(idx.lessons.map(id => fetch(`lessons/${id}/lesson.json?v=3`).then(r => r.json()).catch(() => null)));
   all.forEach((l, i) => { if (l && !l.off) LESSONS[idx.lessons[i]] = l; else if (l?.off) OFF.add(idx.lessons[i]); });
 } catch (e) {}
 if (!Object.keys(LESSONS).length) { document.body.textContent = "레슨 정보를 불러오지 못했어요. 새로고침해 주세요."; throw new Error("lessons"); }
@@ -349,6 +349,24 @@ function beep(hi) {
 }
 // 재생이 막히면(허락이 풀린 경우) «화면을 한 번 눌러 주세요» 를 띄우고 누르면 다시 튼다
 let tapResolve = null;
+// 느린 속도(1배 미만)는 같은 시간축의 120fps 판(CS.video_hfr)으로 바꿔 끼운다 → 0.5배에서도 화면에 진짜 60장 (11-16 대표 «최소 60»)
+// 못 받으면 1배 판으로 돌아가 예전처럼 느리게 튼다(레슨은 멈추지 않는다)
+let teacherSrc = "";
+async function teacherFor(speed, t) {
+  const want = speed < 1 && CS.video_hfr && !teacherFor.bad ? CS.video_hfr : CS.video;
+  if (teacherSrc !== want) {
+    teacherSrc = want; teacher.src = want;
+    const ok = await new Promise(r => {
+      const done = v => { teacher.removeEventListener("loadedmetadata", y); teacher.removeEventListener("error", n); r(v); };
+      const y = () => done(true), n = () => done(false);
+      teacher.addEventListener("loadedmetadata", y); teacher.addEventListener("error", n); setTimeout(() => done(true), 10000);
+    });
+    if (!ok && want !== CS.video) { teacherFor.bad = true; return teacherFor(speed, t); }
+  }
+  teacher.currentTime = t; teacher.playbackRate = speed;
+  teacher.preservesPitch = true; teacher.webkitPreservesPitch = true;
+}
+
 async function playTeacher() {
   if (!running) return false;
   try { actx?.resume?.(); await teacher.play(); return true; }
@@ -603,7 +621,7 @@ async function replayAttempt(a, b, speed, url, compose, myGen) {
   try {
     if (!alive()) return false;
     phase = "replay";
-    teacher.currentTime = a; teacher.playbackRate = speed;
+    await teacherFor(speed, a);
     if (url) { user.srcObject = null; user.src = url; user.playbackRate = 1; user.currentTime = 0; }
     else { user.currentTime = sv === "test-good" ? a : sv === "test-blonde" ? Math.max(0, a - BLONDE_OFFSET) : a % (user.duration || 1); user.playbackRate = speed; }
     if (!compose) setTimeout(() => document.addEventListener("pointerdown", tap, { once: true }), 300);   // 저장 영상을 만드는 중엔 건너뛰지 않는다(잘린 영상 방지)
@@ -664,8 +682,7 @@ function offerSave(blob, label, mine, o = {}) {
 // ── 한 번 따라 하기 ──────────────────────────────────────────────────
 async function playOnce(a, b, speed, watch, record, myGen) {
   curSpeed = speed;
-  phase = "ready"; teacher.pause(); teacher.currentTime = a; teacher.playbackRate = speed;
-  teacher.preservesPitch = true; teacher.webkitPreservesPitch = true;
+  phase = "ready"; teacher.pause(); await teacherFor(speed, a);
   if (user.src && !user.srcObject) { user.pause(); user.currentTime = $("src").value === "test-good" ? a : $("src").value === "test-blonde" ? Math.max(0, a - BLONDE_OFFSET) : a % (user.duration || 1); user.playbackRate = speed; }
   const beatMs = 60000 / BPM / speed; // 박자에 맞춰 3·2·1
   $("prog").style.width = "0%";   // 진행 막대는 0 부터(표시)
@@ -765,7 +782,7 @@ document.addEventListener("visibilitychange", async () => {
   try { wakeLock = await navigator.wakeLock?.request("screen"); ev("wake_again"); } catch {}
 });
 // 첫 화면 «와이파이 권장 · 약 ○MB» = sizes.json(make_sizes.py 가 ls 크기로 만든다)의 공통 + 이 레슨 바이트 합
-fetch("sizes.json?v=1").then(r => r.json()).then(z => { const sum = [...Object.values(z.common || {}), ...Object.values(z.lessons?.[COURSE] || {})].reduce((a, b) => a + b, 0);
+fetch("sizes.json?v=2").then(r => r.json()).then(z => { const sum = [...Object.values(z.common || {}), ...Object.values(z.lessons?.[COURSE] || {})].reduce((a, b) => a + b, 0);
   if (sum > 0) { $("spSize").textContent = `📶 와이파이 권장 · 이 곡 처음 열 때 약 ${Math.round(sum / 1e6)}MB`; $("spSize").hidden = false; } }).catch(() => {});
 async function beginRun() {
   document.body.classList.add("playing"); running = true; const myGen = ++gen; practiceOn();
@@ -1003,8 +1020,8 @@ async function init() {
     const ua = navigator.userAgent;
     ping("inapp", /Instagram/i.test(ua) ? "ig" : /FBAN|FBAV/i.test(ua) ? "fb" : /KAKAOTALK/i.test(ua) ? "kakao" : /NAVER/i.test(ua) ? "naver" : isInApp() ? "other" : "noapi");
   }
-  teacher.src = CS.video; peekVid.src = CS.video;
-  teacher.addEventListener("error", () => errOnce("load"), { once: true });   // 선생님 영상을 못 받음(S0-08)
+  teacher.src = teacherSrc = CS.video; peekVid.src = CS.video;
+  teacher.addEventListener("error", () => { if (teacherSrc === CS.video) errOnce("load"); }, { once: true });   // 선생님 영상을 못 받음(S0-08)
   const getJson = (u) => fetch(u, { cache: initTry ? "reload" : "default" }).then(r => { if (!r.ok) throw Object.assign(new Error(`불러오기 ${r.status}`), { kind: "load" }); return r.json(); })
     .catch(e => { throw Object.assign(e, { kind: e.kind || "load" }); });   // 정답지 · 스텝 파일을 못 받거나 깨짐 = err/load
   const [pj, sj] = await Promise.all([getJson(CS.pose), getJson("steps.json")]);

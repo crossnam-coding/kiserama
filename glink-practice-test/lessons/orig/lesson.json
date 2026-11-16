@@ -3,8 +3,8 @@
  "title": "Glow Connection",
  "sub": "원래 안무",
  "artist": "GLINK",
- "video": "orig.mp4?v=1",
- "pose": "orig_pose.json?v=1",
+ "video": "orig.mp4?v=3",
+ "pose": "orig_pose.json?v=3",
  "from": 5,
  "secs": 15,
  "tips": {
@@ -20,5 +20,7 @@
  "rights": "own",
  "audio_mode": "song",
  "audio_src": "master",
- "off": false
+ "off": false,
+ "video_hfr": "orig_hfr.mp4?v=1",
+ "video_note": "11-16 고화질판 1080x1720 · 1배 60fps / 느린 속도 120fps(_hfr) · make_hq.py"
 }

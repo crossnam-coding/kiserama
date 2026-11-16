@@ -3,8 +3,8 @@
  "title": "Bed Galaxy",
  "sub": "후렴",
  "artist": "온혁",
- "video": "bed.mp4?v=1",
- "pose": "bed_pose.json?v=1",
+ "video": "bed.mp4?v=3",
+ "pose": "bed_pose.json?v=3",
  "secs": 23,
  "bpm": 103.09,
  "steps": [
@@ -43,5 +43,7 @@
  "rights": "own",
  "audio_mode": "song",
  "audio_src": "master",
- "off": false
+ "off": false,
+ "video_hfr": "bed_hfr.mp4?v=1",
+ "video_note": "11-16 고화질판 1080x1720 · 1배 60fps / 느린 속도 120fps(_hfr) · make_hq.py"
 }

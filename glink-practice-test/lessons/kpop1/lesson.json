@@ -3,8 +3,8 @@
  "title": "체포하겠어",
  "sub": "아일릿 커버",
  "artist": "아일릿",
- "video": "kpop1.mp4?v=1",
- "pose": "kpop1_pose.json?v=1",
+ "video": "kpop1.mp4?v=3",
+ "pose": "kpop1_pose.json?v=3",
  "secs": 31,
  "bpm": 145.75,
  "steps": [
@@ -62,6 +62,9 @@
  },
  "rights": "cover_private",
  "audio_mode": "song",
- "audio_src": "room",
- "off": false
+ "audio_src": "ref_internal",
+ "off": false,
+ "audio_note": "11-16 현장 녹음 → 원곡 음원(유튜브 · 내부 시연용 · 외부 공개 금지)",
+ "video_hfr": "kpop1_hfr.mp4?v=1",
+ "video_note": "11-16 고화질판 1080x1720 · 1배 60fps / 느린 속도 120fps(_hfr) · make_hq.py"
 }
