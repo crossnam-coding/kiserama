@@ -1,0 +1,18 @@
+{
+ "note": "판매판 · Bed Galaxy 한 곡 · 바이트",
+ "common": {
+  "vendor/vision_bundle.mjs": 136824,
+  "vendor/wasm/vision_wasm_internal.js": 209826,
+  "vendor/wasm/vision_wasm_internal.wasm": 9423986,
+  "pose_lite.task": 5777746,
+  "steps.json": 355,
+  "naye_card.mp4": 616135,
+  "splash.jpg": 183303
+ },
+ "lessons": {
+  "bed": {
+   "bed.mp4": 18583553,
+   "bed_pose.json": 500087
+  }
+ }
+}

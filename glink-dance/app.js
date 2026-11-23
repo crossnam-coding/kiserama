@@ -1,0 +1,1133 @@
+// GLINK 댄스 클래스 · Bed Galaxy 판매 전용판 (sale v1 · 2026-11-23 · 정본 기획 = 판매기획_온라인_20261123.html)
+// 바탕 = 시연판 glink-practice_v2 app.js v75 · 시연판(나예 시험 주소)은 따로 그대로 둔다
+// 분석 엔진(MediaPipe)은 vendor/ 에 같이 올린다 — 외부 서버로 아무것도 받지도 보내지도 않는다.
+import { PoseLandmarker, FilesetResolver } from "./vendor/vision_bundle.mjs";
+
+// ── 설정 ─────────────────────────────────────────────────────────────
+// 완주 화면의 «수업 신청하러 가기» — 비워 두면 버튼을 숨긴다. 링크 코드(entry.565880711)로 «예습에서 온 신청»을 센다.
+// 11/10 현장 클래스 신청서(대표 결정 11-02 «그날 애들이 많으면 현장 클래스는 그대로 진행») · «링크 코드» 칸(entry.565880711)에 yeseup_<들어온 경로> 가 자동으로 들어간다
+const CTA_URL = "";   // 판매판: 11/10 현장 클래스 신청 버튼은 쓰지 않는다
+const CTA_CODE = "yeseup";
+const CLASS_OPEN = Date.now() < Date.parse("2026-11-05T00:00:00+09:00");   // 11/10 현장 클래스 신청 마감(11/4) 뒤엔 신청 버튼을 숨긴다
+// 사용 단계 세기: 같은 서버의 ping.txt 를 부르면 호스팅 접속 기록에 «시작·완주» 같은 단계만 남는다(영상·이름 없음)
+
+const Q = new URLSearchParams(location.search);
+// ── 판매 설정(한 곳에서만 고친다) ── 가격·환불 문구·결제 주소는 대표 확정 전 «제안» 값이다(판매기획 «오빠가 정할 것»)
+const SALE = {
+  path: "glink-dance",                       // 서비스 주소 kiserama.com/<path>/ (대표 확정 11-23 · 통계 경로 머리도 이것)
+  free: 1,                                   // 무료로 여는 스텝 칸 수(plan 앞에서부터 · 1 = 스텝 1)
+  priceKR: "₩5,900", priceGL: "$4.99",       // 대표 확정 11-23
+  checkoutKR: "",                            // 페이앱(엔씨이) 결제 주소 · 비우면 «결제 준비 중»
+  checkoutGL: "",                            // 레몬스퀴지 결제 주소 · 비우면 «결제 준비 중»
+  refund: "결제 후 7일 안에 잠긴 스텝을 하나도 열지 않았다면 전액 환불해 드려요.",   // 대표 확정 11-23
+  tag: "Choreography @l_r.lk0",              // 저장 영상 공유 글에 붙는 안무가 태그(대표 11-23 «태그만»)
+};
+const SONGS = { bedgalaxy: "bed" };          // 딥링크 ?song=<이름> → 레슨 id
+const KR = (navigator.language || "").toLowerCase().startsWith("ko");
+const DEV = Q.has("dev"), DEMO = Q.has("demo"), DEMO_HEART = Q.get("demo") === "heart";
+if (DEV || DEMO) document.body.classList.add("devmode");
+// ── 코스(11-11) ── orig = 원래 안무(뒤쪽 4스텝 · 15초) · easy = 쉬운 안무(11/10 촬영 · 나예가 추는 뒤쪽 4스텝 · 15초)
+let SWITCHED = false; try { SWITCHED = sessionStorage.getItem("glink_sw") === "1"; sessionStorage.removeItem("glink_sw"); } catch {}
+// ── 클래스의 레슨 목록(11-11) ── 강사 한 명의 클래스에 곡 여러 개 · 곡마다 영상(음원 포함)·정답지·스텝·주의점·숙제
+// tips = 스텝 번호(n)별 강사 주의점(Glow 는 11/10 촬영 S6 에서 나예가 한 말) · hw = 숙제(need = 끝내야 하는 칸 수)
+// 레슨 정보 = lessons/index.json(순서) + lessons/<id>/lesson.json(칸 정의 = 기획안 부록 A-3 · 영상·정답지 경로는 앱 폴더 기준).
+// 레슨 추가 = 폴더 하나 + index 한 줄 · off: true 면 첫 화면 줄과 직접 링크(?l=)에서 사라진다(내림 = 플랫폼/takedown.sh).
+const LESSONS = {}, OFF = new Set();   // OFF = 내려 둔 레슨(S0-09 · 첫 화면 줄에도 직접 링크에도 안 나온다)
+try {
+  const idx = await fetch("lessons/index.json?v=3").then(r => r.json());
+  const all = await Promise.all(idx.lessons.map(id => fetch(`lessons/${id}/lesson.json?v=3`).then(r => r.json()).catch(() => null)));
+  all.forEach((l, i) => { if (l && !l.off) LESSONS[idx.lessons[i]] = l; else if (l?.off) OFF.add(idx.lessons[i]); });
+} catch (e) {}
+if (!Object.keys(LESSONS).length) { document.body.textContent = "레슨 정보를 불러오지 못했어요. 새로고침해 주세요."; throw new Error("lessons"); }
+{ const want = Q.get("l") || Q.get("course");   // 내려 둔 레슨을 직접 링크로 열면 안내 화면만 보여 주고 멈춘다
+  if (want && OFF.has(want)) {
+    const c = (Q.get("c") || "").toLowerCase(), keep = /^[a-z0-9_]{1,20}$/.test(c) ? `?c=${c}` : "";
+    document.body.innerHTML = `<div class="modal" style="display:flex"><div class="card"><h2>이 레슨은 지금 볼 수 없어요</h2><p>잠시 내려 둔 레슨이에요. 다른 레슨으로 연습해 주세요.</p><a href="./${keep}"><button class="pri" style="width:100%">다른 레슨 보기</button></a></div></div>`;
+    throw new Error("lesson off");
+  } }
+const SONG = SONGS[(Q.get("song") || "").toLowerCase()] || "";
+let COURSE = LESSONS.bed ? "bed" : Object.keys(LESSONS)[0]; try { const c = SONG || Q.get("l") || Q.get("course") || localStorage.getItem("glink_course"); if (c && LESSONS[c]) COURSE = c; } catch {}
+const CS = LESSONS[COURSE], CH_NAME = `${CS.secs}초 챌린지`;
+const BAND_URL = `kiserama.com/${SALE.path}`;   // 저장 영상 띠의 주소(한 곳에서만 고친다 · S0-06)
+// 저장·공유는 권리가 정리된 레슨만(기획안 부록 A-3 rights) — 기존 곡 비공개(cover_private)는 영상이 밖으로 퍼지지 않게 버튼을 숨긴다(S0-06 · 배포는 결정 D3 뒤)
+const SAVE_OK = ["own", "teacher_own", "cover_cleared"].includes(CS.rights);
+const BAND = `${CS.artist} «${CS.title}» 따라 추기`, FILE_PRE = `따라추기_${CS.title.replace(/\s/g, "")}`;   // 저장 영상 아래 띠 글자 · 파일 이름 머리(표시 · 기본 곡은 전과 같다)
+let bandFont = "";
+const STORE = (DEV || DEMO ? "glink_done_dev" : "glink_done") + "_" + COURSE + "2";
+const hwDone = () => { try { return CS.hw.ch ? localStorage.getItem(STORE + "_ch") === "1" : [...Array(CS.hw.need).keys()].every(i => done.has(i)); } catch { return false; } };
+function setCourse(c) {   // 코스를 바꾸면 영상·정답지를 새로 받아야 해서 다시 연다(방문 수는 다시 세지 않는다)
+  if (c === COURSE) return;
+  try { localStorage.setItem("glink_course", c); sessionStorage.setItem("glink_sw", "1"); } catch {}
+  const u = new URL(location.href); u.searchParams.delete("course"); u.searchParams.delete("l"); location.replace(u);
+}
+
+const $ = (id) => document.getElementById(id);
+const teacher = $("teacher"), user = $("user");
+const tCan = $("teacherCanvas"), uCan = $("userCanvas");
+const msg = (t) => ($("msg").textContent = t);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => "timeout")]);
+const waitMeta = (v, ms = 5000) => withTimeout(new Promise(r => v.readyState >= 1 ? r() : v.addEventListener("loadedmetadata", r, { once: true })), ms);
+// ── 겉모습 전용(11-11 단장) ── 채점·저장·통계와 무관 · 화면 표시만
+const RM = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();   // «움직임 줄이기»를 켠 폰
+const grade = (n) => n >= 85 ? "🔥 나예급" : n >= 70 ? "⭐ 데뷔조" : n >= 50 ? "👍 연습생" : "🌱 새싹";   // 경계(85·70·50)는 sayKey 와 같게
+function burst(n = 16) {   // 가벼운 색종이: 1.5초 뒤 스스로 지운다 · 움직임 줄이기면 안 띄운다
+  if (RM) return;
+  const box = document.createElement("div"); box.className = "fx";
+  const col = ["#ffd23f", "#ff9f43", "#ff9ecb", "#3ddc84", "#b9a6ff", "#fff"];
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement("i");
+    p.style.cssText = `left:${10 + Math.random() * 80}%;background:${col[i % col.length]};--dx:${Math.round((Math.random() * 2 - 1) * 90)}px;--r:${Math.round(Math.random() * 720 - 360)}deg;animation-delay:${Math.round(Math.random() * 120)}ms`;
+    box.appendChild(p);
+  }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 1500);
+}
+
+const GC = "crossnam";   // 통계(GoatCounter) 코드 · 비우면 아무것도 안 보낸다
+// 사용 지표 (대표 결정 11-02 «신청 안 해도 이용률·머무는 시간·들어오는 횟수를 알 수 있게»)
+// GoatCounter 에 «경로» 하나씩 보낸다: /glink-practice/e/<사건>/<세부> — 이름·영상·점수 없음 · 쿠키 없음
+// 지표 사전 = 따라하기_시험판/지표사전.md
+// 통계 스위치(S0-05 · 지표 사전 «클래스 경로»): 서비스 주소(kiserama.com/glink-practice/)는 예전처럼 보낸다.
+// 그 밖(시험 주소 · 내 컴퓨터)은 STATS_ON_TEST 가 켜져 있고 링크에 클래스 코드(?c=)가 있을 때만 보낸다. c 가 있으면 경로가 /c/<c>/<레슨>/e/… 로 갈린다.
+const STATS_ON_TEST = false;   // 켜는 것은 결정 대장 D2 답 + 방침 문구 승인 뒤(백로그 S0-35) · 배포 스크립트가 false 인지 확인한다
+const APP_VER = "s1";          // 통계 «제목(t)»에 싣는 앱 판 번호 = index.html 의 app.js?v= 와 같게
+const codeOf = (k) => { const v = (Q.get(k) || "").toLowerCase(); return /^[a-z0-9_]{1,20}$/.test(v) ? v : ""; };   // 소문자 · 숫자 · 밑줄 20자
+const CLS = codeOf("c"), CHN = codeOf("ch");   // 클래스 코드 · 링크를 뿌린 곳(kakao 등)
+const IS_PROD = location.hostname === "kiserama.com" && location.pathname.startsWith(`/${SALE.path}/`);
+function ping(e, sub = "") {
+  if (DEV || DEMO || !GC) return;
+  if (!IS_PROD && !(STATS_ON_TEST && CLS)) return;   // 시험 주소 · 미리보기: 스위치가 꺼졌거나 클래스 코드가 없으면 0건
+  try {
+    const tail = `e/${e}${sub ? "/" + String(sub).replace(/[^\w가-힣~.-]/g, "_") : ""}`;
+    const p = CLS ? `/${SALE.path}/c/${CLS}/${COURSE}/${tail}` : `/${SALE.path}/${COURSE}/${tail}`;
+    const ft = firstInfo(), q = "utm_source=" + ft.s + (ft.c || CHN ? "&utm_campaign=" + (ft.c || CHN) : "") + (ft.n ? "&utm_content=" + ft.n : "");
+    const url = `https://${GC}.goatcounter.com/count?p=${encodeURIComponent(p)}&e=true&t=${encodeURIComponent("v" + APP_VER)}&q=${encodeURIComponent(q)}&r=${encodeURIComponent(firstTouch())}&rnd=${Math.random().toString(36).slice(2, 8)}`;
+    fetch(url, { mode: "no-cors", keepalive: true, cache: "no-store" }).catch(() => { new Image().src = url; });
+  } catch {}
+}
+// 폰당 한 번만 보내는 사건(S0-07): 이 폰 저장소에 표시를 남긴다 · 저장소를 지우면 다시 한 번
+const pingOnce = (name, scope, sub = "") => { const k = `glink_ev_${name}_${scope}`; try { if (localStorage.getItem(k)) return; localStorage.setItem(k, "1"); } catch {} ping(name, sub); };
+// 오류 사건(S0-08): err/<종류> = load(영상·정답지) · model(관절 모델) · init(그 밖) · 카메라는 예전 이름 cam_fail 그대로 · 한 번 열 때 종류마다 한 번
+const errSent = new Set(); const errOnce = (kind) => { if (errSent.has(kind)) return; errSent.add(kind); ping("err", kind); };
+const bucketMin = (ms) => { const m = ms / 60000; return m < 1 ? "0-1m" : m < 3 ? "1-3m" : m < 10 ? "3-10m" : m < 20 ? "10-20m" : m < 40 ? "20-40m" : "40m+"; };
+// 몇 번째 방문인지(이 폰 기준) · 머문 시간 · 실제로 춘 시간
+let visitNo = 1; try { visitNo = Math.max(1, (+localStorage.getItem("glink_visits") || 0) + (SWITCHED ? 0 : 1)); localStorage.setItem("glink_visits", String(visitNo)); } catch {}
+const T_OPEN = performance.now(); let practiceMs = 0, practiceFrom = 0, leftSent = false;
+const practiceOn = () => { if (!practiceFrom) practiceFrom = performance.now(); };
+const practiceOff = () => { if (practiceFrom) { practiceMs += performance.now() - practiceFrom; practiceFrom = 0; } };
+function sendLeave() {
+  if (leftSent) return; leftSent = true; practiceOff();
+  ping("stay", bucketMin(performance.now() - T_OPEN));      // 머문 시간
+  ping("practice", bucketMin(practiceMs));                 // 실제로 연습한 시간(카메라 켜고 도는 동안)
+  ping("reach", `${frontier()}of${plan.length}`);           // 어디까지 열었나
+}
+window.addEventListener("pagehide", sendLeave);
+document.addEventListener("visibilitychange", () => { if (document.hidden) sendLeave(); else leftSent = false; });
+// 첫 유입(utm_source)을 이 폰에 한 번만 기록해 둔다 → 신청 링크 코드에 붙여 «어디서 와서 신청했나»를 센다
+// 판매판: 첫 유입 전체(source · medium · campaign · content · 처음 온 날 · 처음 연 곡)를 한 번만 기록 → 결제 주소에 그대로 실어 주문까지 간다
+const utmVal = (k, n = 30) => (Q.get(k) || "").replace(/[^a-z0-9_-]/gi, "").slice(0, n).toLowerCase();
+function firstInfo() {
+  try {
+    const raw = localStorage.getItem("glink_ft"); if (raw) return JSON.parse(raw);
+    const v = { s: utmVal("utm_source", 20) || "direct", m: utmVal("utm_medium"), c: utmVal("utm_campaign"), n: utmVal("utm_content"), t: new Date().toISOString().slice(0, 10), l: SONG || COURSE };
+    localStorage.setItem("glink_ft", JSON.stringify(v)); localStorage.setItem("glink_src", v.s); return v;
+  } catch { return { s: "direct", m: "", c: "", n: "", t: "", l: COURSE }; }
+}
+const firstTouch = () => firstInfo().s;
+firstInfo();   // 처음 연 순간 기록(통계를 안 보내는 주소에서도)
+
+// ── 채점 ────────────────────────────────────────────────────────────
+// 팔다리 9개 + 몸통. 각도 차이로 점수를 낸다(calib2.py 와 같은 식).
+const LIMBS = [[11,13],[13,15],[12,14],[14,16],[23,25],[25,27],[24,26],[26,28],["S","H"]];
+const W = [1.5,1.5,1.5,1.5,1,1,1,1,0.7];
+const TOL = 60; // 이 각도만큼 어긋나면 그 팔다리는 0점
+const SWAP = {11:12,12:11,13:14,14:13,15:16,16:15,23:24,24:23,25:26,26:25,27:28,28:27};
+// 부위: 하체 → 상체 → 전신 순서로 배운다 (대표 결정 11-02)
+const FOCUS = {
+  all:   { limbs: [1,1,1,1,1,1,1,1,1], need: [11,12,13,14,23,24,25,26], tip: "무릎까지 보이게 한 걸음 뒤로 가 주세요" },
+  upper: { limbs: [1,1,1,1,0,0,0,0,1], need: [11,12,13,14], tip: "어깨랑 팔꿈치가 보이게 서 주세요" },
+  lower: { limbs: [0,0,0,0,1,1,1,1,0], need: [23,24,25,26], tip: "엉덩이랑 무릎이 보이게 조금 뒤로 가 주세요" },
+};
+let focusKey = "all";
+const focus = () => FOCUS[focusKey] || FOCUS.all;
+
+function pt(p, k, asp) {
+  if (k === "S") return [(p[11][0] + p[12][0]) / 2 * asp, (p[11][1] + p[12][1]) / 2];
+  if (k === "H") return [(p[23][0] + p[24][0]) / 2 * asp, (p[23][1] + p[24][1]) / 2];
+  return [p[k][0] * asp, p[k][1]];
+}
+function angles(p, asp) { return LIMBS.map(([a, b]) => { const A = pt(p, a, asp), B = pt(p, b, asp); return Math.atan2(B[1] - A[1], B[0] - A[0]); }); }
+function limbScores(A, B) { return A.map((a, i) => { let d = Math.abs(a - B[i]) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; return Math.max(0, 1 - (d * 180 / Math.PI) / TOL); }); }
+let MASK = W.map(() => 1); // 이 프레임에 보이는 팔다리(고른 부위 중)
+const total = (s, mask = MASK) => { let a = 0, b = 0; for (let i = 0; i < s.length; i++) { a += s[i] * W[i] * mask[i]; b += W[i] * mask[i]; } return b > 0 ? 100 * a / b : 0; };
+function userPose(lm, mirror) { return lm.map((q, i) => { const r = lm[mirror ? (SWAP[i] ?? i) : i]; return [mirror ? 1 - r.x : r.x, r.y, r.visibility]; }); }
+// 움직임 크기 = 각도 퍼짐(원형 표준편차)의 가중 평균 · 고른 부위만(프레임마다 바뀌는 MASK 가 아니라 단계의 부위로 고정)
+function spread(list, limbs) {
+  if (list.length < 3) return 0; let tot = 0, wsum = 0;
+  for (let k = 0; k < W.length; k++) { if (!limbs[k]) continue; let c = 0, sn = 0; for (const an of list) { c += Math.cos(an[k]); sn += Math.sin(an[k]); }
+    const R = Math.min(0.999999, Math.hypot(c, sn) / list.length); tot += W[k] * Math.sqrt(-2 * Math.log(R)); wsum += W[k]; }
+  return wsum ? tot / wsum : 0;
+}
+function teacherSpread(a, b, limbs) {
+  const tasp = teacher.videoWidth / teacher.videoHeight, list = [];
+  for (let f = Math.round(a * fps); f <= Math.round(b * fps); f++) { const p = teacherFrames[f]; if (p) list.push(angles(p, tasp)); }
+  return spread(list, limbs);
+}
+
+// ── 상태 ────────────────────────────────────────────────────────────
+let allTeacherSub = [], pose = null, teacherFrames = [], fps = 24, steps = [], plan = [], cur = 0, BPM = 130, ready = false;
+let seen = 0, missed = 0, uAng = [], samples = [];
+let skipNow = false, running = false, phase = "idle", done = new Set(), gen = 0, curSpeed = 1;
+let justDone = -1, combo = 0;   // 표시용: 방금 끝낸 칸(통통 튀는 효과) · 한 번에 통과 연속 횟수 — 저장하지 않는다
+const frontier = () => { let i = 0; while (done.has(i)) i++; return i; };
+function saveDone() { try { localStorage.setItem(STORE, JSON.stringify([...done])); } catch {} }
+try { JSON.parse(localStorage.getItem(STORE) || "[]").forEach(i => done.add(i)); } catch {}
+
+function buildPlan() {
+  const n = steps.length, p = [];
+  for (let i = 0; i < n; i++) {
+    p.push({ from: i, to: i, label: `${i + 1}` });
+    if ((i + 1) % 3 === 0 || i === n - 1) { const s = i - (i % 3); if (i > s) p.push({ from: s, to: i, label: `${s + 1}~${i + 1}` }); }
+  }
+  p.push({ from: 0, to: n - 1, label: "전체" });
+  return p;
+}
+function drawSteps() {
+  const f = frontier();
+  $("steps").innerHTML = plan.map((s, i) => {
+    const grp = s.from !== s.to, last = s.label === "전체";
+    const name = grp ? (last ? "🏆" : "⭐") + s.label : s.label;
+    const face = i <= f && done.has(i) && i !== cur && !grp ? "✓" : name;   // 잠긴 칸은 번호 + 자물쇠 표시(CSS)
+    return `<span data-i="${i}" class="${grp ? "grp" : ""} ${done.has(i) ? "done" : ""} ${i === cur ? "cur" : ""} ${i > f || paidItem(i) ? "lock" : ""} ${paidItem(i) ? "paid" : ""} ${i === justDone ? "new" : ""}" aria-label="스텝 ${s.label}${paidItem(i) ? " 유료" : i > f ? " 잠김" : done.has(i) ? " 완료" : ""}">${face}</span>`;
+  }).join("");
+  $("lTitle").textContent = `${CS.title} · ${CS.sub}`;
+  { const it = plan[Math.min(cur, plan.length - 1)], tp = []; if (it && CS.tips) for (let k = it.from; k <= it.to; k++) { const t = CS.tips[steps[k].n]; if (t) tp.push(t); }
+    $("tip").hidden = !tp.length; $("tip").textContent = tp.length ? "📌 나예 주의점 — " + tp.join(" / ") : ""; }
+  drawHw();
+  { const g = plan.findIndex((x, i) => i >= f && x.from !== x.to), nm = g < 0 ? "" : plan[g].label === "전체" ? "🏆 전체" : "⭐ " + plan[g].label;   // 다음 목표(묶음·전체)까지 몇 칸
+    $("lCount").textContent = done.size >= plan.length ? "🏆 전부 통과!" : g < 0 ? `${done.size} / ${plan.length} 완료` : g === f ? `${done.size}/${plan.length} · 지금 ${nm} 도전!` : `${done.size}/${plan.length} · ${plan[g].label === "전체" ? "🏆 전체" : "⭐ 묶음"} 도전까지 ${g - f}칸`; }
+  $("lBar").style.width = `${Math.round(done.size / Math.max(1, plan.length) * 100)}%`;
+  const cEl = $("steps").querySelector(".cur"); if (cEl) { const box = $("steps"); box.scrollLeft = Math.max(0, cEl.offsetLeft - box.clientWidth / 2 + cEl.offsetWidth / 2); }
+}
+function setStartLabel() {
+  const b = $("start");
+  if (!ready) { b.disabled = true; b.textContent = "준비 중…"; return; }
+  b.disabled = false;
+  b.textContent = cur >= plan.length ? "다시 처음부터" : done.size ? `${plan[cur].label === "전체" ? "전체" : "스텝 " + plan[cur].label}부터 이어서` : "시작";
+}
+
+// ── 그리기 ──────────────────────────────────────────────────────────
+function drawSkeleton(can, p, colors) {
+  const c = can.getContext("2d"); c.clearRect(0, 0, can.width, can.height);
+  if (!p) return;
+  c.lineWidth = Math.max(4, can.width / 120); c.lineCap = "round";
+  LIMBS.forEach(([a, b], i) => {
+    const A = a === "S" ? [(p[11][0] + p[12][0]) / 2, (p[11][1] + p[12][1]) / 2] : p[a];
+    const B = b === "H" ? [(p[23][0] + p[24][0]) / 2, (p[23][1] + p[24][1]) / 2] : p[b];
+    c.strokeStyle = colors ? colors[i] : "#ffd23fcc";
+    c.beginPath(); c.moveTo(A[0] * can.width, A[1] * can.height); c.lineTo(B[0] * can.width, B[1] * can.height); c.stroke();
+  });
+}
+// 겹쳐 보기 선: 나예 어깨·엉덩이 자리 + 나예 뼈 길이 + 내 방향 (가늘고 옅게 · 대표 결정 11-02)
+const CHAINS = [[11, 13, 15, 0, 1], [12, 14, 16, 2, 3], [23, 25, 27, 4, 5], [24, 26, 28, 6, 7]];
+function drawGhost(p, u, uasp, tasp, ls) {
+  if (!p || !u) return;
+  const c = tCan.getContext("2d");
+  const T = (k) => [p[k][0] * tasp, p[k][1]], U = (k) => [u[k][0] * uasp, u[k][1]];
+  const px = (q) => [q[0] / tasp * tCan.width, q[1] * tCan.height];
+  c.lineCap = "round"; c.lineWidth = Math.max(2, tCan.width / 180);
+  const col = (v) => v > 0.6 ? "rgba(61,220,132,.4)" : v > 0.3 ? "rgba(255,210,63,.45)" : "rgba(255,90,106,.55)";
+  for (const [a, b, d, i1, i2] of CHAINS) {
+    if (!MASK[i1]) continue;
+    let st = T(a);
+    for (const [f, to, li] of [[a, b, i1], [b, d, i2]]) {
+      if (!MASK[li]) break;
+      const tf = T(f), tt = T(to), len = Math.hypot(tt[0] - tf[0], tt[1] - tf[1]);
+      const uf = U(f), ut = U(to), dl = Math.hypot(ut[0] - uf[0], ut[1] - uf[1]) || 1;
+      const en = [st[0] + (ut[0] - uf[0]) / dl * len, st[1] + (ut[1] - uf[1]) / dl * len];
+      const A = px(st), B = px(en);
+      c.strokeStyle = col(ls[li]); c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke();
+      st = en;
+    }
+  }
+}
+// 내 몸만 오려 나예 위에 얹기 — 마스크는 반 해상도로 읽는다(매 프레임 전체 해상도는 폰이 뜨거워진다)
+let meAlpha = 0.5;
+const cut = { sc: 0, tx: null, ty: null };
+const oc = document.createElement("canvas"), octx = oc.getContext("2d", { willReadFrequently: true });
+function drawCutout(maskObj, lm, p, mirror) {
+  if (!maskObj || !p) return;
+  const W0 = maskObj.width, H0 = maskObj.height, m = maskObj.getAsFloat32Array();
+  const S = 2, w = Math.floor(W0 / S), h = Math.floor(H0 / S);
+  if (oc.width !== w || oc.height !== h) { oc.width = w; oc.height = h; }
+  octx.drawImage(user, 0, 0, w, h);
+  const img = octx.getImageData(0, 0, w, h), d = img.data, A8 = Math.round(255 * meAlpha);
+  for (let y = 0, j = 3; y < h; y++) { const row = y * S * W0; for (let x = 0; x < w; x++, j += 4) d[j] = m[row + x * S] > 0.5 ? A8 : 0; }
+  octx.putImageData(img, 0, 0);
+  // 크기 = 몸통 길이 비율(돌아도 안 변함) · 하체만 볼 땐 엉덩이 기준 · 부드럽게 따라감
+  const mid = (a, b) => [(a.x + b.x) / 2 * w, (a.y + b.y) / 2 * h];
+  const P0 = mid(lm[11], lm[12]), Ph = mid(lm[23], lm[24]);
+  const A = [(p[11][0] + p[12][0]) / 2 * tCan.width, (p[11][1] + p[12][1]) / 2 * tCan.height];
+  const Ah = [(p[23][0] + p[24][0]) / 2 * tCan.width, (p[23][1] + p[24][1]) / 2 * tCan.height];
+  const hipsOk = lm[23].visibility > 0.5 && lm[24].visibility > 0.5, shOk = lm[11].visibility > 0.5 && lm[12].visibility > 0.5;
+  const lowerOnly = focusKey === "lower" || !shOk;
+  const ratio = (ax, ay, bx, by) => Math.hypot(ax, ay) / (Math.hypot(bx, by) || 1);
+  const raw = lowerOnly ? ratio((p[23][0] - p[24][0]) * tCan.width, (p[23][1] - p[24][1]) * tCan.height, (lm[23].x - lm[24].x) * w, (lm[23].y - lm[24].y) * h)
+            : hipsOk ? ratio(Ah[0] - A[0], Ah[1] - A[1], Ph[0] - P0[0], Ph[1] - P0[1])
+            : ratio((p[11][0] - p[12][0]) * tCan.width, (p[11][1] - p[12][1]) * tCan.height, (lm[11].x - lm[12].x) * w, (lm[11].y - lm[12].y) * h);
+  if (!isFinite(raw) || raw <= 0) return;
+  cut.sc = cut.sc ? cut.sc + (raw - cut.sc) * 0.05 : raw;
+  const sc = cut.sc, sx = mirror ? -sc : sc, [Qp, B] = lowerOnly ? [Ph, Ah] : [P0, A];
+  const tx = B[0] - sx * Qp[0], ty = B[1] - sc * Qp[1];
+  cut.tx = cut.tx == null ? tx : cut.tx + (tx - cut.tx) * 0.3;
+  cut.ty = cut.ty == null ? ty : cut.ty + (ty - cut.ty) * 0.3;
+  const c = tCan.getContext("2d");
+  c.save(); c.setTransform(sx, 0, 0, sc, cut.tx, cut.ty); c.drawImage(oc, 0, 0); c.restore();
+}
+const clearTeacherCanvas = () => tCan.getContext("2d").clearRect(0, 0, tCan.width, tCan.height);
+function teacherFrameAt(t) { return teacherFrames[Math.min(teacherFrames.length - 1, Math.max(0, Math.round(t * fps)))]; }
+
+// 나예 화면 확대·따라가기 (부위 단계는 28% 덜 확대 · 대표 결정 11-02)
+let camX = 0.5, camY = 0.5, camZ = 1, layout = null, layoutAt = 0;
+function followTeacher(p) {
+  if (!p || !teacher.videoWidth) return;
+  const now = performance.now();
+  if (!layout || now - layoutAt > 500) {   // 크기 읽기는 0.5초에 한 번(매 프레임 레이아웃 읽기 비용 줄이기)
+    const pane = $("tbox").parentElement, s0 = Math.min(teacher.clientWidth / teacher.videoWidth, teacher.clientHeight / teacher.videoHeight);
+    layout = { pw: pane.clientWidth, ph: pane.clientHeight, cw: teacher.videoWidth * s0, ch: teacher.videoHeight * s0 }; layoutAt = now;
+  }
+  const { pw, ph, cw, ch } = layout, f = focusKey, ys = (ks) => ks.map(k => p[k][1]), xs = (ks) => ks.map(k => p[k][0]);
+  let y0 = 0, y1 = 1;
+  if (f === "upper") { y0 = Math.min(...ys([0, 15, 16])) - 0.08; y1 = Math.max(...ys([23, 24])) + 0.06; }
+  if (f === "lower") { y0 = Math.min(...ys([23, 24])) - 0.06; y1 = Math.max(...ys([27, 28, 29, 30, 31, 32])) + 0.05; }
+  const armX = xs([11, 12, 13, 14, 15, 16]), x0 = Math.min(...armX) - 0.1, x1 = Math.max(...armX) + 0.1;
+  const zWant = f === "all" ? Math.min(1.6, ph / ch, (pw * 1.6) / cw)
+    : f === "upper" ? 0.72 * Math.min(2.4, ph / ((y1 - y0) * ch), pw / ((x1 - x0) * cw))
+    : 0.72 * Math.min(3, ph / ((y1 - y0) * ch));
+  camZ += (Math.max(1, zWant) - camZ) * 0.06;
+  camY += ((y0 + y1) / 2 - camY) * 0.08;
+  const cx = f === "upper" ? (x0 + x1) / 2 : (p[11][0] + p[12][0] + p[23][0] + p[24][0]) / 4;
+  camX += (cx - camX) * 0.08;
+  const Z = camZ, limX = Math.max(0, (cw * Z - pw) / 2 / Z), limY = Math.max(0, (ch * Z - ph) / 2 / Z);
+  const dx = Math.max(-limX, Math.min(limX, (0.5 - camX) * cw)), dy = Math.max(-limY, Math.min(limY, (0.5 - camY) * ch));
+  $("tbox").style.transform = `scale(${Z.toFixed(3)}) translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+}
+function showMe(on) { document.querySelector(".pane.me").classList.toggle("hide", !on); }
+
+// ── 안내 띠 ─────────────────────────────────────────────────────────
+let noteTimer, stageMsg = "";
+function setStage(t) { stageMsg = t; msg(t); const s = $("stagebar"); s.textContent = t; s.classList.remove("tip"); }
+function note(t) {
+  msg(t); const s = $("stagebar"); s.textContent = t; s.classList.add("tip");
+  clearTimeout(noteTimer); noteTimer = setTimeout(() => { s.textContent = stageMsg; s.classList.remove("tip"); msg(stageMsg); }, 1500);
+}
+let bigSeq = 0;
+async function big(t, ms, tone) {   // tone: "ok"(초록) · "gold"(노랑) · "bad"(연분홍+흔들림) — 기다리는 시간(ms)은 그대로
+  const el = $("big"), c = el.classList, my = ++bigSeq;
+  c.remove("pop", "num", "ok", "bad", "gold", "long", "score");
+  el.textContent = t;
+  if (/^\d$/.test(t)) c.add("num");   // 3·2·1
+  if (tone) c.add(tone);
+  c.toggle("long", t.length > 14);
+  void el.offsetWidth; c.add("pop");
+  await sleep(ms);
+  if (my === bigSeq) { el.textContent = ""; c.remove("pop", "num", "ok", "bad", "gold", "long"); }
+}
+async function bigCount(n, hold = 1500) {   // 싱크로율 공개: 숫자가 올라가다 멈추고 등급이 뜬다(점수 n 은 이미 계산된 값 · 표시만)
+  const el = $("big"), c = el.classList, my = ++bigSeq, up = RM ? 0 : 800, t0 = performance.now();
+  c.remove("pop", "num", "ok", "bad", "gold", "long"); c.add("score");
+  el.textContent = "";
+  const g = document.createElement("span"), num = document.createElement("span");
+  g.className = "bg-g"; num.className = "bg-n"; g.textContent = "\u00a0"; el.append(g, num);
+  void el.offsetWidth; c.add("pop");
+  for (;;) {
+    const k = up ? Math.min(1, (performance.now() - t0) / up) : 1;
+    num.textContent = `싱크로율 ${Math.round(n * (1 - Math.pow(1 - k, 3)))}%`;
+    if (k >= 1 || my !== bigSeq || !num.isConnected) break;
+    await sleep(33);
+  }
+  if (my === bigSeq && num.isConnected) { g.textContent = grade(n); g.classList.add("in"); if (n >= 70) { c.add(n >= 85 ? "gold" : "ok"); burst(20); } }
+  await sleep(hold);
+  if (my === bigSeq) { el.textContent = ""; c.remove("pop", "score", "gold", "ok"); }
+}
+
+// ── 소리·재생 허락 (아이폰은 사용자가 누른 순간에만 소리를 풀어 준다) ──────────
+window.EV = []; window.TS = []; const ev = (type, o = {}) => window.EV.push({ t: performance.now(), type, ...o }); // 시연 영상 소리 맞추기용
+let actx = null;
+function unlockMedia() {   // 버튼을 누른 «그 순간»에 부른다 (await 전에)
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}   // 무음 스위치가 켜져 있어도 소리 나게(지원 기기)
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume?.(); } catch {}
+  teacher.muted = false;
+  teacher.play().then(() => { if (!running || phase === "idle") teacher.pause(); }).catch(() => {});
+}
+function beep(hi) {
+  ev("beep", { hi });
+  try { if (!actx) return; actx.resume?.(); const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = hi ? 1320 : 880;
+    g.gain.setValueAtTime(0.25, actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.15); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.16); } catch {}
+}
+// 재생이 막히면(허락이 풀린 경우) «화면을 한 번 눌러 주세요» 를 띄우고 누르면 다시 튼다
+let tapResolve = null;
+// 느린 속도(1배 미만)는 같은 시간축의 120fps 판(CS.video_hfr)으로 바꿔 끼운다 → 0.5배에서도 화면에 진짜 60장 (11-16 대표 «최소 60»)
+// 못 받으면 1배 판으로 돌아가 예전처럼 느리게 튼다(레슨은 멈추지 않는다)
+let teacherSrc = "";
+async function teacherFor(speed, t) {
+  const want = speed < 1 && CS.video_hfr && !teacherFor.bad ? CS.video_hfr : CS.video;
+  if (teacherSrc !== want) {
+    teacherSrc = want; teacher.src = want;
+    const ok = await new Promise(r => {
+      const done = v => { teacher.removeEventListener("loadedmetadata", y); teacher.removeEventListener("error", n); r(v); };
+      const y = () => done(true), n = () => done(false);
+      teacher.addEventListener("loadedmetadata", y); teacher.addEventListener("error", n); setTimeout(() => done(true), 10000);
+    });
+    if (!ok && want !== CS.video) { teacherFor.bad = true; return teacherFor(speed, t); }
+  }
+  teacher.currentTime = t; teacher.playbackRate = speed;
+  teacher.preservesPitch = true; teacher.webkitPreservesPitch = true;
+}
+
+async function playTeacher() {
+  if (!running) return false;
+  try { actx?.resume?.(); await teacher.play(); return true; }
+  catch (e) {
+    if (!running) return false;
+    $("tapbox").hidden = false;
+    await new Promise(r => { tapResolve = r; $("tapBtn").onclick = () => { tapResolve = null; $("tapbox").hidden = true; unlockMedia(); r(); }; });
+    if (!running) return false;
+    try { await teacher.play(); return true; } catch { return false; }
+  }
+}
+
+// ── 카메라 (한 번 열고 끝나면 끈다) ─────────────────────────────────
+let camStream = null, camErr = "";
+function inAppHow() {
+  const ua = navigator.userAgent;
+  if (/KAKAOTALK/i.test(ua)) return "카카오톡 안에서는 카메라가 안 열려요. 아래 «외부 브라우저로 열기»를 눌러 주세요.";
+  if (/Instagram|FBAN|FBAV/i.test(ua)) return "인스타그램 안에서는 카메라가 안 열려요. 오른쪽 위 ⋯ → «외부 브라우저에서 열기»를 눌러 주세요.";
+  if (/NAVER/i.test(ua)) return "네이버 앱 안에서는 카메라가 안 열려요. 오른쪽 아래 ⋯ → «다른 브라우저로 열기»를 눌러 주세요.";
+  return /Android/i.test(ua) ? "이 앱 안에서는 카메라가 안 열려요. 메뉴(⋮)에서 «다른 브라우저로 열기»(크롬·삼성 인터넷)를 눌러 주세요." : "이 앱 안에서는 카메라가 안 열려요. 메뉴(⋯)에서 «Safari로 열기»를 눌러 주세요.";
+}
+const isInApp = () => /KAKAOTALK|Instagram|FBAN|FBAV|NAVER|Line\/|everytimeApp|DaumApps/i.test(navigator.userAgent);
+const CAM_TRIES = [{ aspectRatio: { exact: 3 / 4 }, height: { ideal: 960 } }, { width: { ideal: 720 }, height: { ideal: 960 } }, {}];
+async function openCamera(myGen) {
+  if (camStream && camStream.getVideoTracks().some(t => t.readyState === "live")) return true;
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) { camErr = "noapi"; return false; }
+  const alive = () => running && myGen === gen;
+  const get = async (k) => navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", ...CAM_TRIES[k] }, audio: false });
+  // 아이폰이 가로(1280×720)로 주는 문제(11-02 실측) → 세로 3:4 를 먼저. 이긴 조건은 이 폰에 기억해서 다음엔 한 번에 연다
+  let k = -1; try { const v = +localStorage.getItem("glink_cam"); if (v >= 0 && v < CAM_TRIES.length && localStorage.getItem("glink_cam") !== null) k = v; } catch {}
+  if (k < 0) {
+    const probe = document.createElement("video"); probe.muted = true; probe.playsInline = true;
+    let bestK = -1, bestR = 0;
+    for (let t = 0; t < CAM_TRIES.length; t++) {
+      let st;
+      try { st = await get(t); } catch (e) { camErr = e.name || "err"; if (["NotAllowedError", "SecurityError", "NotFoundError", "TypeError"].includes(e.name)) break; continue; }
+      probe.srcObject = st; probe.play().catch(() => {}); await waitMeta(probe, 4000);
+      const r = (probe.videoHeight || 1) / (probe.videoWidth || 1);
+      st.getTracks().forEach(x => x.stop()); probe.srcObject = null;   // 재고 나면 바로 끈다(두 개를 동시에 켜지 않음)
+      if (!alive()) return false;
+      if (bestK < 0 || r > bestR) { bestK = t; bestR = r; }
+      if (r > 1) break;
+    }
+    if (bestK < 0) return false;
+    k = bestK; try { localStorage.setItem("glink_cam", String(k)); } catch {}
+  }
+  let st;
+  try { st = await get(k); } catch (e) { camErr = e.name || "err"; try { localStorage.removeItem("glink_cam"); } catch {} return false; }
+  if (!alive()) { st.getTracks().forEach(x => x.stop()); return false; }
+  camStream = st; camErr = "";
+  try { const tr = camStream.getVideoTracks()[0], cap = tr.getCapabilities?.() || {}; if (cap.zoom) await tr.applyConstraints({ advanced: [{ zoom: cap.zoom.min }] }); } catch {}
+  return true;
+}
+function closeCamera() { camStream?.getTracks().forEach(t => t.stop()); camStream = null; if (user.srcObject) user.srcObject = null; }
+// 안드로이드 앱 안 브라우저(카톡 빼고 · 카톡은 자체 «외부 브라우저로 열기») → «크롬으로 열기»(S0-16)
+// 형식 = 크롬 공식 문서 https://developer.chrome.com/docs/android/intents (11-11 확인) · 누른 순간에만 열린다 · 크롬이 없으면 같은 주소로 돌아온다
+const androidInApp = () => /Android/i.test(navigator.userAgent) && isInApp() && !/KAKAOTALK/i.test(navigator.userAgent);
+const chromeIntent = () => { const u = new URL(location.href); return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(location.href)};end`; };
+function showChromeOpen(id) { const a = $(id); if (!a) return; const on = androidInApp(); a.hidden = !on; if (on) { a.href = chromeIntent(); a.onclick = () => ping("chrome_open"); } }
+function showFail(m) { $("failText").textContent = m; $("kakaoBtn").hidden = !/KAKAOTALK/i.test(navigator.userAgent); showChromeOpen("chromeOpen2"); $("fail").hidden = false; }
+function camFailMessage() {
+  if (camErr === "noapi" || isInApp()) return inAppHow();
+  if (camErr === "NotAllowedError" || camErr === "SecurityError") return /Android/i.test(navigator.userAgent)
+    ? "카메라를 허용해 주세요. 주소창 왼쪽 자물쇠(또는 ⓘ) → 권한 → 카메라 → «허용»을 고른 뒤 새로고침해 주세요."
+    : "카메라를 허용해 주세요. 주소창 왼쪽 «가가»(또는 «aA») → 웹 사이트 설정 → 카메라 → «허용»을 고른 뒤 새로고침해 주세요.";;
+  if (camErr === "NotReadableError") return "다른 앱이 카메라를 쓰고 있어요. 그 앱을 닫고 다시 시도해 주세요.";
+  return "카메라를 켜지 못했어요. 새로고침 후 다시 시도해 주세요.";
+}
+async function setSource(myGen) {
+  const v = $("src").value, mirror = v === "cam";
+  user.classList.toggle("nomirror", !mirror); uCan.classList.toggle("mirror", mirror);
+  $("userTag").textContent = mirror ? "나 (거울처럼 보여요)" : "시험 입력";
+  if (mirror) {
+    if (!(await openCamera(myGen))) return false;
+    user.removeAttribute("src"); if (user.srcObject !== camStream) user.srcObject = camStream;
+  } else {
+    closeCamera(); user.srcObject = null;
+    const src = v === "test-good" ? "teacher.mp4" : v === "test-blonde" ? "blonde.mp4" : "other.mp4";
+    if (!user.src.endsWith(src)) { user.src = src; user.load(); }
+    user.loop = v !== "test-blonde";
+  }
+  user.play().catch(() => {});
+  await waitMeta(user, 5000);
+  if (myGen !== gen || !running) return false;
+  if (!user.videoWidth) { camErr = camErr || "nometa"; return false; }
+  uCan.width = Math.round(user.videoWidth / 3); uCan.height = Math.round(user.videoHeight / 3);  // 작은 창용 뼈대 — 1/3 크기면 충분
+  return true;
+}
+
+// ── 프레임마다 ──────────────────────────────────────────────────────
+let lastTs = -1, lastVT = -1;
+const DS = document.createElement("canvas"), dctx = DS.getContext("2d");
+function loop() {
+  requestAnimationFrame(loop);
+  if (DEMO && !teacher.paused) window.TS.push([performance.now(), teacher.currentTime]);
+  if (!pose || !running) return;   // 연습 중이 아닐 땐 분석하지 않는다(배터리·카메라)
+  if (phase === "setup") { setupFrame(); return; }
+  const t = teacher.currentTime;
+  followTeacher(teacherFrameAt(t));
+  if (!user.videoWidth || user.readyState < 2 || phase === "idle" || phase === "judge") return;
+  const sv = $("src").value, off = sv === "test-blonde" ? BLONDE_OFFSET : 0;
+  if ((sv === "test-good" || sv === "test-blonde") && (phase === "play" || phase === "watch") && Math.abs(user.currentTime - (t - off)) > 0.15) user.currentTime = Math.max(0, t - off);
+  if (phase === "watch" || phase === "ready") return;   // 보기·카운트다운 땐 분석 안 함
+  if (user.currentTime === lastVT) return; lastVT = user.currentTime;   // 새 카메라 프레임일 때만(화면 갱신마다 하지 않음)
+  const now = performance.now(); if (now <= lastTs) return;
+  if (phase === "replay" && now - lastTs < 66) return;   // 다시 보기는 1초 15번이면 충분
+  lastTs = now;
+  // 480px 로 줄여서 분석(마스크·읽기 비용 ↓ · 좌표는 비율이라 채점 그대로)
+  const k = Math.min(1, 480 / Math.max(user.videoWidth, user.videoHeight));
+  if (DS.width !== Math.round(user.videoWidth * k)) { DS.width = Math.round(user.videoWidth * k); DS.height = Math.round(user.videoHeight * k); }
+  dctx.drawImage(user, 0, 0, DS.width, DS.height);
+  let res;
+  try { res = pose.detectForVideo(DS, now); } catch { return; }
+  try { frame(res); } finally { res.segmentationMasks?.forEach(mk => mk.close()); }
+}
+let setupLast = 0;
+function setupFrame() {
+  if (!user.videoWidth || user.currentTime === lastVT) return; lastVT = user.currentTime;
+  const now = performance.now(); if (now - lastTs < 100) return;
+  const k = Math.min(1, 480 / Math.max(user.videoWidth, user.videoHeight));
+  if (DS.width !== Math.round(user.videoWidth * k)) { DS.width = Math.round(user.videoWidth * k); DS.height = Math.round(user.videoHeight * k); }
+  dctx.drawImage(user, 0, 0, DS.width, DS.height);
+  let res; try { res = pose.detectForVideo(DS, now); } catch { return; }
+  const dt = setupLast ? now - setupLast : 0; setupLast = now; lastTs = now;
+  try {
+    const lm = res.landmarks?.[0];
+    const okAll = lm && [11, 12, 13, 14, 23, 24, 25, 26].every(i => lm[i].visibility > 0.5);
+    placeOk = okAll ? placeOk + dt : 0;
+    if (lm) drawSkeleton(uCan, lm.map(q => [q.x, q.y]), okAll ? null : LIMBS.map(() => "#ff5a6a"));
+    const miss = !lm ? "몸이 안 보여요 · 뒤로 👣" : [25, 26].some(i => lm[i].visibility <= 0.5) ? "무릎이 안 보여요 · 한 걸음 뒤로 👣" : [23, 24].some(i => lm[i].visibility <= 0.5) ? "허리가 안 보여요 · 뒤로 👣" : [13, 14].some(i => lm[i].visibility <= 0.5) ? "팔꿈치가 안 보여요" : "";
+    $("big").classList.add("setup");
+    { const k = Math.min(5, Math.floor(placeOk / 300)); $("big").textContent = okAll ? `좋아요! 그대로 ✓ ${"●".repeat(k)}${"○".repeat(5 - k)}` : miss; }
+    setStage("자리 잡기 · 머리부터 무릎까지 보이게 서요 · 맞으면 바로 시작해요");
+  } finally { res.segmentationMasks?.forEach(mk => mk.close()); }
+}
+const BLONDE_OFFSET = 14.833; // 시험 입력: 금발 영상 0초 = 나예 영상 14.833초
+function frame(res) {
+  const t = teacher.currentTime, mirror = $("src").value === "cam", lm = res.landmarks?.[0];
+  const replay = phase === "replay";
+  if (!lm) { if (!replay) { clearTeacherCanvas(); if (phase === "play") { missed++; note(focus().tip); } } return; }
+  const visible = focus().need.every(k => lm[k].visibility > 0.35);
+  { const v = (k) => k === "S" ? Math.min(lm[11].visibility, lm[12].visibility) : k === "H" ? Math.min(lm[23].visibility, lm[24].visibility) : lm[mirror ? (SWAP[k] ?? k) : k].visibility;
+    MASK = LIMBS.map(([a, b], i) => (focus().limbs[i] && v(a) > 0.5 && v(b) > 0.5) ? 1 : 0); }
+  const up = userPose(lm, mirror), uasp = user.videoWidth / user.videoHeight, tasp = teacher.videoWidth / teacher.videoHeight;
+  const ua = angles(up, uasp);
+  // 반응이 늦는 것을 봐준다: 선생님 시간 기준 조금 앞~뒤 중 가장 비슷한 순간과 비교
+  const lo = t - (0.8 * curSpeed + 0.15), hi = t + 0.25 * curSpeed;
+  let best = null;
+  for (let s = lo; s <= hi; s += 1 / fps) { const f = teacherFrameAt(s); if (!f) continue; const ls = limbScores(angles(f, tasp), ua), sc = total(ls); if (!best || sc > best.sc) best = { sc, ls }; }
+  if (!best) return;
+  // 아무 순간과나 맞는 정도(기본 점수)를 뺀다 — 나예 자세 120개 표본으로(전체 700개를 매 프레임 돌리지 않음)
+  let base = 0; for (const f of allTeacherSub) base += total(limbScores(f, ua)); base /= Math.max(1, allTeacherSub.length);
+  best.sc = Math.max(0, Math.min(100, 1.5 * 100 * (best.sc - base) / Math.max(1, 100 - base)));
+  if (replay) {   // 다시 보기 땐 큰 화면의 내 영상에 뼈대만
+    const colorOf = (v) => v > 0.6 ? "#3ddc84" : v > 0.3 ? "#ffd23f" : "#ff5a6a";
+    let cols = best.ls.map(colorOf); if (mirror) { const m = [2, 3, 0, 1, 6, 7, 4, 5, 8]; cols = m.map(i => cols[i]); }
+    drawSkeleton(uCan, lm.map(q => [q.x, q.y]), cols); return;
+  }
+  clearTeacherCanvas();
+  drawCutout(res.segmentationMasks?.[0], lm, teacherFrameAt(t), mirror);
+  drawGhost(teacherFrameAt(t), up, uasp, tasp, best.ls);
+  $("live").textContent = Math.round(best.sc);
+  seen++;
+  if (visible) { samples.push(best.sc); uAng.push(ua); } else note(focus().tip);
+}
+
+// ── 배우는 순서 (대표 결정 11-02) ─────────────────────────────────────────
+// 한 스텝 = 하체(천천히 보기 → 0.5배 → 0.75배) → 상체(같은 순서) → 전신(천천히 보기 → 0.5 → 0.75 → 원래 속도)
+const PART = (focus, word) => [
+  { focus, speed: 0.5, watch: true, dim: 1, me: 0, name: `${word} 천천히`, intro: `${word}부터 해요!` },
+  { focus, speed: 0.5, dim: 0.95, me: 0.5, name: `${word} 0.5배` },
+  { focus, speed: 0.75, dim: 0.8, me: 0.6, name: `${word} 0.75배` },
+];
+const JOIN = [
+  { focus: "all", speed: 0.5, watch: true, dim: 1, me: 0, name: "전신 천천히", intro: "이제 합쳐 봐요!" },
+  { focus: "all", speed: 0.5, dim: 0.9, me: 0.5, name: "전신 0.5배" },
+  { focus: "all", speed: 0.75, dim: 0.7, me: 0.62, name: "전신 0.75배" },
+  { focus: "all", speed: 1, dim: 0.5, me: 0.75, name: "전신 원래 속도", last: true },
+];
+const LADDER_STEP = [...PART("lower", "하체"), ...PART("upper", "상체"), ...JOIN];
+const LADDER_CHAIN = JOIN;
+function estimateMinutes() {   // 안내용: 전체 코스 대략 몇 분
+  let s = 0;
+  for (const it of plan) { const len = steps[it.to].end - steps[it.from].start, lad = it.from === it.to ? LADDER_STEP : LADDER_CHAIN;
+    for (const st of lad) s += len / st.speed + 3 * 60 / BPM / st.speed + 1.5; }
+  return Math.round(s / 60);
+}
+
+// ── 녹화 · 다시 보기 · 저장 ──────────────────────────────────────────
+let rec = null, recChunks = [], lastRec = null, lastClip = null, lastRecBlob = null;
+const pickType = () => ["video/mp4", "video/webm;codecs=vp9", "video/webm"].find(t => window.MediaRecorder?.isTypeSupported?.(t));
+function startRec() {
+  if (!camStream || !window.MediaRecorder) return;
+  try { const type = pickType(); recChunks = []; rec = new MediaRecorder(camStream, type ? { mimeType: type, videoBitsPerSecond: 2500000 } : { videoBitsPerSecond: 2500000 }); rec.ondataavailable = e => e.data.size && recChunks.push(e.data); rec.start(); } catch { rec = null; }
+}
+function stopRec() {
+  return new Promise(res => {
+    if (!rec || rec.state === "inactive") return res(null);
+    const r = rec; rec = null;
+    r.onstop = () => { const blob = recChunks.length ? new Blob(recChunks, { type: r.mimeType || "video/mp4" }) : null; lastRecBlob = blob; const url = blob ? URL.createObjectURL(blob) : null; recChunks = []; res(url); };
+    try { r.stop(); } catch { res(null); }
+  });
+}
+const dropRec = () => { if (lastRec) URL.revokeObjectURL(lastRec); lastRec = null; };
+// 합친 영상(위 나예 · 아래 나 · 홍보 띠 = 확정 14 «꼭»)
+let audioDest = null;
+function teacherAudioTrack() {
+  try {
+    if (!actx) return null;
+    if (!audioDest) { const src = actx.createMediaElementSource(teacher); audioDest = actx.createMediaStreamDestination(); src.connect(actx.destination); src.connect(audioDest); }
+    actx.resume?.();
+    return audioDest.stream.getAudioTracks()[0];
+  } catch { return null; }
+}
+function startCompose(mirror, badge = "") {
+  ev("band", { band: BAND, url: BAND_URL });   // 시험용 기록(window.EV · 밖으로 안 나감): 이번 저장 영상 띠에 들어갈 글자
+  const cv = document.createElement("canvas"); cv.width = 720; cv.height = 1280;
+  const c = cv.getContext("2d"), st = cv.captureStream ? cv.captureStream(30) : null;
+  if (!st || !window.MediaRecorder) return null;
+  const at = teacherAudioTrack(); if (at) st.addTrack(at);
+  const type = pickType(), chunks = [];
+  let r; try { r = new MediaRecorder(st, type ? { mimeType: type, videoBitsPerSecond: 4000000 } : { videoBitsPerSecond: 4000000 }); } catch { st.getVideoTracks().forEach(t => t.stop()); return null; }
+  r.ondataavailable = e => e.data.size && chunks.push(e.data);
+  const fit = (v, x, y, w, h, flip) => { const vw = v.videoWidth, vh = v.videoHeight; if (!vw) return; const k = Math.min(w / vw, h / vh), dw = vw * k, dh = vh * k;
+    c.save(); if (flip) { c.translate(x + w, y); c.scale(-1, 1); c.drawImage(v, (w - dw) / 2, (h - dh) / 2, dw, dh); } else c.drawImage(v, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); c.restore(); };
+  let on = true;
+  let lastDraw = 0;
+  (function draw(ts) { if (!on) return;
+    if (ts && ts - lastDraw < 32) { requestAnimationFrame(draw); return; } lastDraw = ts || 0;
+    try { c.fillStyle = "#0e0e12"; c.fillRect(0, 0, 720, 1280);
+      fit(teacher, 0, 0, 720, 600, false); fit(user, 0, 610, 720, 600, mirror);
+      c.fillStyle = "#fff"; c.font = "bold 30px -apple-system, sans-serif"; c.fillText("NAYE", 24, 44); c.fillText("나", 24, 654);
+      c.fillStyle = "#ffd23f"; c.font = "bold 34px -apple-system, sans-serif";
+      if (!bandFont) bandFont = c.measureText(BAND).width > 696 ? "bold 28px -apple-system, sans-serif" : "bold 34px -apple-system, sans-serif";   // 띠 글자가 화면(720)보다 길 때만 한 단계 작게(표시)
+      c.font = bandFont; c.textAlign = "center"; c.fillText(BAND, 360, badge ? 1236 : 1255);
+      if (badge) { c.font = "26px -apple-system, sans-serif"; c.fillStyle = "#e6e6ea"; c.fillText(BAND_URL, 360, 1270);
+        c.textAlign = "right"; c.fillStyle = "#ffd23f"; c.font = "bold 40px -apple-system, sans-serif"; c.fillText(badge, 700, 50); }
+      c.textAlign = "left"; } catch {}
+    requestAnimationFrame(draw); })();
+  r.start();
+  const finish = (res) => { st.getVideoTracks().forEach(t => t.stop()); res(chunks.length ? new Blob(chunks, { type: r.mimeType || "video/mp4" }) : null); };
+  return { stop: () => new Promise(res => { on = false; if (r.state === "inactive") return finish(res); r.onstop = () => finish(res); try { r.stop(); } catch { finish(res); } }) };
+}
+async function replayAttempt(a, b, speed, url, compose, myGen) {
+  const sv = $("src").value, alive = () => running && myGen === gen;
+  if (sv === "cam" && !url) return false;
+  showMe(true); document.body.classList.add("replaying"); teacher.style.opacity = 1; clearTeacherCanvas();
+  $("userTag").textContent = "방금 내 동작";
+  setStage(compose ? `방금 내 동작 · 저장할 영상을 만드는 중이에요 (약 ${Math.round((b - a) / speed)}초)` : "방금 내 동작 · 화면을 누르면 건너뛰어요");
+  await big("내 동작 보기 👀", 900);
+  let comp = null, skip = false; const tap = () => (skip = true);
+  try {
+    if (!alive()) return false;
+    phase = "replay";
+    await teacherFor(speed, a);
+    if (url) { user.srcObject = null; user.src = url; user.playbackRate = 1; user.currentTime = 0; }
+    else { user.currentTime = sv === "test-good" ? a : sv === "test-blonde" ? Math.max(0, a - BLONDE_OFFSET) : a % (user.duration || 1); user.playbackRate = speed; }
+    if (!compose) setTimeout(() => document.addEventListener("pointerdown", tap, { once: true }), 300);   // 저장 영상을 만드는 중엔 건너뛰지 않는다(잘린 영상 방지)
+    comp = compose ? startCompose(sv === "cam", typeof compose === "string" ? compose : "") : null;
+    ev("play", { a, b, speed, replay: true });
+    const okPlay = await playTeacher(); user.play().catch(() => {});
+    let lastT = -1, stall = 0;
+    if (okPlay) while (alive() && !skip && teacher.currentTime < b) {
+      if (teacher.paused || teacher.currentTime === lastT) { if (++stall > 60) break; } else { stall = 0; lastT = teacher.currentTime; }   // 3초 멈추면 빠져나감
+      await sleep(50);
+    }
+    ev("stop");
+  } finally {
+    const clip = comp ? await withTimeout(comp.stop(), 3000).then(v => v === "timeout" ? null : v) : null;
+    lastClip = skip ? null : clip;
+    document.removeEventListener("pointerdown", tap);
+    teacher.pause(); user.pause();
+    if (url) { user.removeAttribute("src"); user.load(); URL.revokeObjectURL(url); if (camStream && alive()) { user.srcObject = camStream; user.play().catch(() => {}); } }
+    $("userTag").textContent = "나 (거울처럼 보여요)";
+    document.body.classList.remove("replaying"); if (alive()) { showMe(false); phase = "judge"; }
+  }
+  return true;
+}
+let lastSync = null;   // 마지막 챌린지 점수(공유 글에만 쓴다)
+const shareText = () => `${CS.title} 따라 추기${lastSync != null ? ` · 싱크로율 ${lastSync}%` : ""} 🔥 ${SALE.tag} · https://${BAND_URL}/?song=${Object.keys(SONGS).find(k => SONGS[k] === COURSE) || COURSE}&utm_source=share`;
+// 영상 하나 저장·공유 버튼 연결 (공유 창 → 안 되면 «파일로 저장» 링크 + 미리보기)
+function wireSave(btn, dl, blob, name, evName) {
+  const ext = (blob.type || "").includes("mp4") ? "mp4" : "webm";
+  const file = new File([blob], `${name}.${ext}`, { type: blob.type }), url = URL.createObjectURL(blob);
+  dl.href = url; dl.download = file.name; dl.hidden = false; dl.onclick = () => ping(evName, "file");
+  btn.hidden = false;
+  btn.onclick = async () => {
+    ping(evName);
+    try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text: shareText() }); return; } } catch (e) { if (e?.name === "AbortError") return; }
+    const vid = $("saveVideo"); vid.src = url; vid.hidden = false; vid.muted = false; $("saveHint").hidden = false; vid.play().catch(() => {});
+  };
+  return url;
+}
+function offerSave(blob, label, mine, o = {}) {
+  return new Promise(res => {
+    const box = $("savebox"), vid = $("saveVideo");
+    vid.hidden = true; $("saveHint").hidden = true;
+    ["saveBtn", "dlBtn", "saveMeBtn", "dlMeBtn"].forEach(id => $(id).hidden = true);
+    $("saveTitle").textContent = o.title || "후렴 완주! 💃"; $("saveTitle").classList.toggle("score", !!o.title);
+    const link = CTA_URL && CLASS_OPEN ? CTA_URL + encodeURIComponent(`${CTA_CODE}_${firstTouch()}`) : "";
+    $("ctaBtn").hidden = !link; if (link) { $("ctaBtn").href = link; $("ctaBtn").target = "_blank"; $("ctaBtn").onclick = () => ping("cta"); }
+    const urls = [];
+    if (!SAVE_OK) { blob = null; mine = null; }   // 기존 곡 레슨: 저장·공유·파일 버튼을 하나도 붙이지 않는다
+    if (blob) urls.push(wireSave($("saveBtn"), $("dlBtn"), blob, `${FILE_PRE}_${label.replace(/\s/g, "")}`, "save"));
+    if (mine) urls.push(wireSave($("saveMeBtn"), $("dlMeBtn"), mine, `${FILE_PRE}_내춤`, "save_me"));
+    $("saveText").textContent = !SAVE_OK ? `${o.textNoSave ? o.textNoSave + " " : ""}이 곡은 곡 권리 때문에 영상 저장을 쉬고 있어요. 다시 보기는 이 화면에서만 돼요.` : o.text || `🏆 ${plan.length}칸 전부 통과! ` + (blob || mine ? "방금 춘 후렴 전체를 내 폰에 저장할 수 있어요." : "내 영상을 남기려면 «전체»를 처음부터 한 번 더 춰 보세요.");
+    box.hidden = false;
+    const close = (v) => { box.hidden = true; vid.removeAttribute("src"); vid.load(); urls.forEach(u => URL.revokeObjectURL(u)); res(v); };
+    $("againBtn").hidden = !o.again; if (o.again) { $("againBtn").textContent = o.again; $("againBtn").onclick = () => { unlockMedia(); close("again"); }; }
+    $("lockBtn").hidden = unlocked(); $("lockBtn").onclick = () => { close(); openLock("result"); };
+    $("nextBtn").onclick = () => close();
+    ev("savebox");
+  });
+}
+
+// ── 판매 잠금(sale v1) ── 스텝 SALE.free 칸까지 무료 · 그 뒤는 «나머지 스텝 배우기» 잠금 화면(가격 · 받는 것 · 환불)
+// 풀림 표시는 결제 확인 뒤에만 쓴다(결제 연결 전에는 아무도 풀 수 없다 · ?dev 미리보기만 풀림)
+const unlocked = () => { if (DEV) return true; try { return localStorage.getItem("glink_paid_" + COURSE) === "1"; } catch { return false; } };
+const paidItem = (i) => i >= SALE.free && !unlocked();
+let lockOpens = 0;
+function checkoutUrl() {
+  const base = KR ? SALE.checkoutKR : SALE.checkoutGL; if (!base) return "";
+  const ft = firstInfo(), u = new URL(base);
+  // 첫 유입을 주문에 싣는다: 레몬스퀴지 = checkout[custom][…] (공식 문서) · 페이앱은 연결 때 칸 이름을 맞춘다
+  const pairs = { utm_source: ft.s, utm_medium: ft.m, utm_campaign: ft.c, utm_content: ft.n, first_day: ft.t, song: COURSE };
+  Object.entries(pairs).forEach(([k, v]) => { if (v) u.searchParams.set(KR ? k : `checkout[custom][${k}]`, v); });
+  return u.toString();
+}
+function openLock(from) {
+  lockOpens++; ping("lock_open", from); if (lockOpens === 2) pingOnce("lock_open2", COURSE);   // 두 번 이상 연 사람 = 구매 직전 신호
+  $("lkPrice").textContent = KR ? SALE.priceKR : SALE.priceGL;
+  $("lkWhat").textContent = `${CS.title} ${CS.sub} 전체 ${steps.length}스텝 — 하체 → 상체 → 전신 · 0.5배 → 0.75배 → 원래 속도 · 쉬움/표준/어려움 반 · 완주 영상 저장`;
+  $("lkRefund").textContent = SALE.refund;
+  const url = checkoutUrl(), b = $("lkBuy");
+  b.disabled = !url; b.textContent = url ? `${KR ? SALE.priceKR : SALE.priceGL} 결제하고 바로 배우기` : "결제 준비 중이에요 · 곧 열려요";
+  b.onclick = () => { if (!url) return; ping("buy_click", KR ? "kr" : "gl"); location.href = url; };
+  $("lockbox").hidden = false;
+}
+
+// ── 한 번 따라 하기 ──────────────────────────────────────────────────
+async function playOnce(a, b, speed, watch, record, myGen) {
+  curSpeed = speed;
+  phase = "ready"; teacher.pause(); await teacherFor(speed, a);
+  if (user.src && !user.srcObject) { user.pause(); user.currentTime = $("src").value === "test-good" ? a : $("src").value === "test-blonde" ? Math.max(0, a - BLONDE_OFFSET) : a % (user.duration || 1); user.playbackRate = speed; }
+  const beatMs = 60000 / BPM / speed; // 박자에 맞춰 3·2·1
+  $("prog").style.width = "0%";   // 진행 막대는 0 부터(표시)
+  for (const n of ["3", "2", "1"]) { if (!running || myGen !== gen) return false; beep(false); await big(n, beatMs); }
+  if (!running || myGen !== gen) return false;
+  beep(true);
+  samples = []; seen = 0; missed = 0; uAng = []; cut.sc = 0; cut.tx = cut.ty = null;
+  phase = watch ? "watch" : "play";
+  ev("play", { a, b, speed });
+  if (!(await playTeacher())) { if (running && myGen === gen) endRun("선생님 영상을 틀지 못했어요. 소리를 켜고 아래 노란 버튼을 눌러 주세요."); return false; }
+  if (record) startRec();   // 영상이 실제로 돈 뒤에 녹화를 켠다(다시 보기 싱크)
+  if (user.src && !user.srcObject) user.play().catch(() => {});
+  let lastT = -1, stall = 0;
+  while (running && myGen === gen && !skipNow && teacher.currentTime < b) {
+    $("prog").style.width = `${100 * (teacher.currentTime - a) / (b - a)}%`;
+    if (teacher.currentTime === lastT) { if (++stall > 60) break; } else { stall = 0; lastT = teacher.currentTime; }   // 3초 넘게 멈추면 빠져나간다
+    await sleep(50);
+  }
+  ev("stop"); phase = "judge"; teacher.pause(); if (user.src && !user.srcObject) user.pause();
+  clearTeacherCanvas();
+  const r = await stopRec();
+  if (record) lastRec = r; else if (r) URL.revokeObjectURL(r);
+  return running && myGen === gen;
+}
+
+async function runItem(myGen, testOut = false) {
+  const it = plan[cur], a = steps[it.from].start, b = steps[it.to].end, thr = +$("thr").value;
+  const label = it.label === "전체" ? "전체" : it.label.includes("~") ? `스텝 ${it.label} 이어서` : `스텝 ${it.label}`;
+  drawSteps();
+  const ladder = DEMO_HEART ? LADDER_STEP
+    : DEMO && it.label === "전체" ? [{ focus: "all", speed: 1, dim: 0.5, me: 0.75, name: "전체 · 원래 속도", last: true, intro: "마지막! 전체 한 번" }]
+    : testOut ? [{ focus: "all", speed: 1, dim: 0.5, me: 0.7, name: "바로 시험 · 원래 속도 한 번", last: true, intro: "바로 시험이에요!" }]
+    : it.from === it.to ? LADDER_STEP : LADDER_CHAIN;
+  for (const st of ladder) {
+    showMe(false); teacher.style.opacity = st.dim; meAlpha = st.me; focusKey = st.focus; $("focus").value = st.focus; layout = null;
+    if (st.intro) { setStage(label); await big(st.intro, 1100); }   // 큰 안내가 뜨는 동안 위 띠도 지금 스텝 이름으로(표시)
+    // 다시 보기는 묶음·전체를 원래 속도로 통과했을 때만 → 그때만 녹화한다(매번 녹화하면 폰이 뜨거워짐)
+    const showBack = st.last && !testOut && (it.from !== it.to || DEMO_HEART);
+    for (let tries = 1; running && myGen === gen; tries++) {
+      setStage(`${label} · ${ladder.length > 1 ? `${ladder.indexOf(st) + 1}/${ladder.length} · ` : ""}${st.watch ? "👀 보기만" : "💃 따라 춰요"} · ${st.name}${st.watch || tries < 2 ? "" : ` · ${tries}번째`}`);
+      $("tscore").textContent = st.watch ? "👀 보기만 해요" : ""; $("tscore").className = st.watch ? "watch" : "";
+      if (!(await playOnce(a, b, st.speed, st.watch, showBack && $("src").value === "cam", myGen))) { dropRec(); return; }
+      if (skipNow) { skipNow = false; dropRec(); return true; }
+      if (st.watch) break;
+      const covered = seen + missed ? samples.length / (seen + missed) : 0;   // 잰 횟수 중 몸이 보인 비율
+      const shape = samples.length ? samples.reduce((x, y) => x + y, 0) / samples.length : 0;
+      const limbs = FOCUS[st.focus].limbs, want = teacherSpread(a, b, limbs);
+      const size = want > 0 ? Math.min(1.5, spread(uAng, limbs) / want) : 1;   // 1 = 나예만큼 크게
+      const avg = shape * Math.min(1, size / 0.4);   // 움직임 크기는 «진짜 작을 때»(나예의 40% 미만)만 깎는다 (대표 결정 11-02 «지금은 너무 어려워»)
+      const need = Math.max(thr - 10, (st.last ? Math.min(90, thr + 10) : thr) - 5 * Math.max(0, tries - 3));   // 마지막은 엄격하게 · 3번 넘게 막히면 조금씩 봐준다
+      $("pass").textContent = `모양 ${Math.round(shape)} · 크기 ${Math.round(size * 100)}% / 기준 ${need}`;
+      $("tscore").textContent = `${Math.round(avg)}점`; $("tscore").className = avg >= need ? "ok" : "no";
+      if (seen + missed < 5) { dropRec(); await big("카메라가 느려요 · 다시!", 1500, "bad"); continue; }
+      if (covered < 0.4) { dropRec(); await big(focus().tip, 1800, "bad"); continue; }
+      if (avg >= need) {
+        const lastRung = st === ladder[ladder.length - 1];
+        if (lastRung) {   // 마지막 단계 통과 = 이 칸 완료 · 알리는 순간 저장
+          if (testOut) for (let q = 0; q <= cur; q++) done.add(q); else done.add(cur);
+          saveDone(); justDone = cur; drawSteps(); justDone = -1; ping("step", it.label);
+          if (it.label === "전체" || DEMO_HEART) ping("finish");
+        }
+        combo = tries === 1 ? combo + 1 : 0;   // 표시용
+        if (st.last) burst(18);
+        await big(st.last ? "다 익혔어요! 🎉" : tries === 1 ? (combo >= 2 ? `한 번에 통과 ×${combo} ⚡` : "한 번에 통과! ⚡") : "좋아요! 👍", 1100, st.last ? "gold" : "ok");
+        lastClip = null;
+        const compose = it.label === "전체" || DEMO_HEART;   // 저장용 합친 영상은 «전체»만
+        if (showBack) await replayAttempt(a, b, st.speed, lastRec, compose, myGen); else dropRec();
+        lastRec = null;
+        if (!running || myGen !== gen) return;
+        if (st.last && (it.label === "전체" || DEMO_HEART)) {
+          if (testOut) lastClip = null;
+          // 완주 기록을 먼저 남기고(신청·공유로 다른 앱에 다녀와도 안 날아가게) 카메라를 끈 뒤 완주 카드
+          closeCamera(); teacher.pause(); setStage("후렴 완주! 💃");
+          const mine = testOut ? null : lastRecBlob; lastRecBlob = null;
+          await offerSave(lastClip, "후렴전체", mine);
+        }
+        lastClip = null;
+        break;
+      }
+      dropRec();
+      if (testOut) { await big(`아직이에요 · ${Math.round(avg)}점 (통과 ${need}점)`, 1500, "bad"); return false; }
+      { const gap = Math.max(1, Math.ceil(need - avg));   // 통과까지 몇 점 남았는지(표시)
+        await big(size < 0.35 ? `조금 더 크게! (움직임 ${Math.round(size * 100)}%)` : gap <= 5 ? `아까워요! ${gap}점만 더 🔥` : `다시! ${Math.round(avg)}점 · ${need}점이면 통과`, 1500, "bad"); }
+      if (tries === 3) ping("stuck", `${it.label}-${st.focus}-${st.speed}`);
+      if (tries === 3) await big("어려우면 «⏸ 멈춤»⁠을 누르고 아래 «난이도»⁠를 «쉬움»⁠으로 바꿔도 돼요", 3200);
+    }
+    if (!running || myGen !== gen) return;
+  }
+  return true;   // 완료 저장은 마지막 단계 통과 순간에 이미 했다
+}
+
+// ── 시작 · 멈춤 ──────────────────────────────────────────────────────
+let wakeLock = null;
+// 화면이 다시 보이면 꺼짐 방지를 다시 건다(S0-18 · 숨기면 브라우저가 풀어 버린다 · https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API)
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState !== "visible" || !running || (wakeLock && !wakeLock.released)) return;
+  try { wakeLock = await navigator.wakeLock?.request("screen"); ev("wake_again"); } catch {}
+});
+// 첫 화면 «와이파이 권장 · 약 ○MB» = sizes.json(make_sizes.py 가 ls 크기로 만든다)의 공통 + 이 레슨 바이트 합
+fetch("sizes.json?v=2").then(r => r.json()).then(z => { const sum = [...Object.values(z.common || {}), ...Object.values(z.lessons?.[COURSE] || {})].reduce((a, b) => a + b, 0);
+  if (sum > 0) { $("spSize").textContent = `📶 와이파이 권장 · 이 곡 처음 열 때 약 ${Math.round(sum / 1e6)}MB`; $("spSize").hidden = false; } }).catch(() => {});
+async function beginRun() {
+  document.body.classList.add("playing"); running = true; const myGen = ++gen; practiceOn();
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
+  setStage("카메라 켜는 중…");
+  const ok = await setSource(myGen);
+  if (myGen !== gen || !running) { if (!running) closeCamera(); return null; }
+  if (!ok) { ping("cam_fail", camErr || "unknown"); const m = camFailMessage(); endRun(m); showFail(m); return null; }
+  { const due = Date.parse(CS.hw?.due || ""); if (due && Date.now() > due) pingOnce("review_start", `${CLS || "-"}_${COURSE}`); }   // 숙제 마감 뒤 첫 연습 = 복습
+  if (!(await placeCheck(myGen))) return null;
+  return myGen;
+}
+function endRun(text) {
+  running = false; gen++; phase = "idle"; practiceOff();
+  tapResolve?.(); tapResolve = null;
+  teacher.pause(); teacher.style.opacity = 1; clearTeacherCanvas(); dropRec();
+  document.body.classList.remove("playing", "replaying", "chal"); showMe(true);
+  $("tapbox").hidden = true; $("big").textContent = "";
+  try { wakeLock?.release(); } catch {} wakeLock = null;
+  closeCamera();   // 멈추거나 끝나면 카메라를 끈다
+  focusKey = "all"; $("focus").value = "all"; layout = null;
+  setStartLabel(); drawSteps(); combo = 0; $("tscore").textContent = ""; $("tscore").className = "";   // 지난 판 점수 알약은 지운다(표시)
+  if (hwJust) { hwJust = false; burst(18); text = "🎉 숙제 완료! " + (text || ""); }   // 숙제를 방금 끝냈으면 조작판으로 돌아온 순간 알린다(표시)
+  if (text) msg(text);
+}
+let placeOk = 0;
+async function placeCheck(myGen) {
+  if ($("src").value !== "cam" || DEMO) return true;
+  showMe(true); document.body.classList.add("replaying"); $("userTag").textContent = "나 (거울처럼 보여요)";
+  setStage("자리 잡기 · 머리부터 무릎까지 보이게 서요 · 맞으면 바로 시작해요");
+  phase = "setup"; placeOk = 0;
+  const t0 = performance.now();
+  while (running && myGen === gen && placeOk < 1500 && performance.now() - t0 < 25000) await sleep(100);
+  document.body.classList.remove("replaying"); showMe(false); $("big").classList.remove("setup"); $("big").textContent = "";
+  if (!running || myGen !== gen) return false;
+  ping("setup", placeOk >= 1500 ? "ok" : "timeout");
+  await big(placeOk >= 1500 ? "좋아요! 시작해요" : "자리 확인은 건너뛰고 시작해요", 1100, placeOk >= 1500 ? "ok" : undefined);
+  phase = "idle";
+  return true;
+}
+async function run() {
+  const myGen = await beginRun(); if (myGen == null) return;
+  ping("start", done.size ? "resume" : "new");
+  if (!DEMO && $("src").value === "test-blonde" && cur < 5) { for (let k = 0; k < 5; k++) done.add(k); cur = 5; drawSteps(); }
+  while (running && myGen === gen && cur < plan.length) {
+    if (paidItem(cur)) { endRun(`스텝 ${SALE.free}까지 무료 체험 끝! 나머지는 잠금을 풀면 이어서 배워요.`); openLock("run"); return; }
+    const ok = await runItem(myGen);
+    if (ok) cur = Math.max(cur + 1, frontier()); else break;
+  }
+  if (myGen !== gen) return;
+  if (cur >= plan.length) { burst(24); await big("수고했어요! 👏", 1400, "gold"); await nayeSay("done"); endRun("후렴 전체 완주! 한 번 더 하려면 아래 노란 버튼을 눌러요."); }
+  else endRun();
+}
+// ── 나예가 말 거는 앱(11/10 촬영 S7) ── 점수·시작·다시·완주 때 나예 영상 한마디 · 한국어 폰이면 한국어, 아니면 영어
+const SAY_LANG = (navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en";
+const sayKey = (n) => n >= 85 ? "s90" : n >= 70 ? "s70" : n >= 50 ? "s50" : "low";
+let capsP = null;   // 한마디 자막(S0-15) = react/captions.json · 확인 안 된 대사는 빈칸이라 안 보인다
+async function nayeSay(key, maxMs = 7000) {
+  const v = $("nayeSay"); if (!v) return;
+  capsP = capsP || fetch("react/captions.json?v=1").then(r => r.json()).catch(() => ({}));
+  const cap = (await capsP)[`${SAY_LANG}_${key}`] || "", capEl = $("nayeCap");
+  v.src = `react/${SAY_LANG}_${key}.mp4?v=1`; v.style.display = "block"; v.muted = false;
+  try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (_) { v.style.display = "none"; return; } }
+  ping("say", key);
+  if (capEl && cap) { capEl.textContent = cap; capEl.hidden = false; ev("cap", { key, cap }); }
+  await new Promise(r => { const t = setTimeout(r, maxMs); v.onended = () => { clearTimeout(t); r(); }; });
+  if (capEl) capEl.hidden = true;
+  v.pause(); v.style.display = "none"; v.removeAttribute("src"); v.load();
+}
+// ── N초 챌린지 ── 후렴 전체를 한 번 추고 «나예 싱크로율»을 받는다 · 위 나예·아래 나 영상(점수·주소 박힘)을 저장(11-05 대표 결정 «앱 자체를 매력적으로»)
+let chSpeed = 1, chPrev = null, chPrevSpeed = 1;   // chPrev = 지난 판 점수(이 탭에서만 · 저장 안 함)
+const syncWord = (n) => n >= 85 ? "선생님이랑 거의 똑같아요 🔥" : n >= 70 ? "거의 다 왔어요 👏" : n >= 50 ? "좋은 출발이에요 👍" : "차근차근 배우기부터 해 봐요 🙂";
+async function challenge() {
+  document.body.classList.add("chal");   // 표시용: 챌린지 중에는 스텝 칸을 안 보여 준다(endRun 에서 뗀다)
+  const myGen = await beginRun(); if (myGen == null) return;
+  ping("ch_start", chSpeed);
+  const a = steps[0].start, b = steps[steps.length - 1].end, limbs = FOCUS.all.limbs;
+  showMe(false); teacher.style.opacity = 0.5; meAlpha = 0.7; focusKey = "all"; $("focus").value = "all"; layout = null;
+  setStage(`${CH_NAME} · ${chSpeed === 1 ? "원래 속도" : chSpeed + "배"} · 나예를 따라 춰요`);
+  try { if (!sessionStorage.getItem("saidStart")) { sessionStorage.setItem("saidStart", "1"); await nayeSay("start", 6000); } } catch (e) {}
+  await big(`${CH_NAME}!`, 1100);
+  const cam = $("src").value === "cam";
+  if (!(await playOnce(a, b, chSpeed, false, cam, myGen))) { dropRec(); return; }
+  const covered = seen + missed ? samples.length / (seen + missed) : 0;
+  if (seen + missed < 5 || covered < 0.4) { dropRec(); ping("ch_fail", seen + missed < 5 ? "slow" : "body"); endRun(seen + missed < 5 ? "카메라가 느려서 못 쟀어요. 다른 앱을 닫고 다시 해 봐요." : "몸이 화면에 다 안 보였어요. 머리부터 무릎까지 보이게 한 걸음 뒤로 가서 다시!"); return; }
+  const shape = samples.length ? samples.reduce((x, y) => x + y, 0) / samples.length : 0;
+  const want = teacherSpread(a, b, limbs), size = want > 0 ? Math.min(1.5, spread(uAng, limbs) / want) : 1;
+  const sync = Math.max(0, Math.min(100, Math.round(shape * Math.min(1, size / 0.4))));   // 채점은 스텝 연습과 같은 식
+  lastSync = sync; ping("ch_done", `${Math.floor(sync / 10) * 10}`); try { localStorage.setItem(STORE + "_ch", "1"); } catch {} drawHw();
+  await bigCount(sync);   // 숫자가 올라가다 멈추고 등급이 뜬다
+  setStage("💬 나예 선생님 한마디");
+  await nayeSay(sayKey(sync));
+  lastClip = null;
+  await replayAttempt(a, b, chSpeed, lastRec, `싱크로율 ${sync}%`, myGen); lastRec = null;
+  if (!running || myGen !== gen) return;
+  closeCamera(); teacher.pause(); setStage(`싱크로율 ${sync}%`);
+  const mine = lastRecBlob; lastRecBlob = null;
+  const slow = sync < 60 && chSpeed === 1;
+  const diff = chPrev != null && chPrevSpeed === chSpeed ? sync - chPrev : null; chPrev = sync; chPrevSpeed = chSpeed;   // 같은 속도로 다시 췄을 때만 비교(표시)
+  const diffTxt = diff > 0 ? `지난번보다 +${diff}%p 올랐어요 📈 ` : diff < 0 ? "지난번이 조금 더 높았어요. 한 번 더 해 봐요! " : "";
+  const r = await offerSave(lastClip, `챌린지_${sync}`, mine, { title: `${grade(sync)}\n싱크로율 ${sync}%`, textNoSave: `${diffTxt}${syncWord(sync)}`, text: `${diffTxt}${syncWord(sync)} 위 나예 · 아래 나 영상을 저장해서 친구한테 도전장을 보내 봐요.`, again: slow ? "0.75배로 다시 도전" : sync >= 85 ? "한 번 더 추기" : `다시 도전 · ${sync >= 70 ? 85 : sync >= 50 ? 70 : 50}% 넘기` });
+  lastClip = null;
+  if (myGen !== gen) return;
+  endRun("한 스텝씩 천천히 배우려면 아래 노란 버튼을 눌러요.");
+  if (r === "again") { if (slow) chSpeed = 0.75; ping("ch_again", chSpeed); await nayeSay("again", 6000); challenge(); }
+}
+async function testOut(i) {
+  const myGen = await beginRun(); if (myGen == null) return;
+  cur = i; ping("testout", plan[i].label);
+  const ok = await runItem(myGen, true);
+  if (myGen !== gen) return;
+  cur = frontier(); endRun(ok ? "통과! 여기까지 열렸어요." : "아직이에요. 앞 스텝부터 차근차근 해 봐요.");
+}
+
+const openKakaoExternal = () => { location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(location.href); };
+$("kakaoBtn").onclick = openKakaoExternal; $("kakaoOpen").onclick = openKakaoExternal;
+$("copyLink").onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(location.href); ok = true; } catch {}   // 크롬으로 안 열릴 때 주소를 복사해서 크롬에 붙여 넣는다
+  $("copyLink").textContent = ok ? "링크를 복사했어요 · 크롬 주소창에 붙여 넣어 주세요" : location.href; ping("copy_link", ok ? "ok" : "fail"); };
+$("failClose").onclick = () => { $("fail").hidden = true; };
+$("reloadBtn").onclick = () => location.reload();
+// ── 오픈 화면 → 설치 가이드 → 시작 (대표 결정 11-02 «실제 앱처럼 오픈 화면 · 어디쯤 설치하면 좋은지 가이드») ──
+let guided = false; try { guided = localStorage.getItem("glink_guided") === "1"; } catch {}
+// 가이드 넘기기: 스크롤 대신 번호를 직접 들고 옆으로 민다(아이폰 스크롤 스냅이 프로그램 넘김을 무시하는 경우가 있다 · 11-02 «안 넘어가»)
+const cards = () => [...document.querySelectorAll(".gd-card")];
+let gdI = 0;
+function gdIndex() { return gdI; }
+function gdUpdate() {
+  const n = cards().length, i = gdI;
+  $("gdCards").style.transform = `translateX(${-100 * i}%)`;
+  $("gdCount").textContent = `${i + 1} / ${n}`;
+  [...$("gdDots").children].forEach((d, k) => d.classList.toggle("on", k === i));
+  cards().forEach((c, k) => c.classList.toggle("on", k === i));   // 보이는 카드만 내용이 스르륵 뜬다(표시)
+  const last = i >= n - 1;
+  document.querySelector(".gd-nav").hidden = last; $("go").hidden = !last; $("gdSkip").hidden = last;
+  $("gdPrev").disabled = i === 0;
+  $("gdBack").hidden = !last || n < 2;   // 마지막 장에서도 앞 장으로 돌아갈 길(표시·이동만)
+}
+const gdGo = (i) => { gdI = Math.max(0, Math.min(cards().length - 1, i)); gdUpdate(); };
+$("gdNext").onclick = () => gdGo(gdI + 1);
+$("gdPrev").onclick = () => gdGo(gdI - 1);
+$("gdBack").onclick = () => gdGo(gdI - 1);
+$("gdSkip").onclick = () => gdGo(cards().length - 1);
+{ let x0 = null; const el = $("gdWrap");   // 손가락으로 밀어 넘기기
+  el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener("touchend", e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) gdGo(gdI + (dx < 0 ? 1 : -1)); }, { passive: true }); }
+function openGuide() { $("splash").hidden = true; $("spVid").pause(); $("guide").hidden = false; gdI = 0; gdUpdate(); ping("guide"); }
+// 인앱 브라우저(인스타·카톡 등)는 첫 화면에서 겁주지 않고, 카메라를 고를 때만 알린다(11-03 광고 손님 90%가 첫 화면에서 나감)
+let inAppWarned = false, loadFail = false;   // loadFail = 불러오기 실패(«불러오는 중» 화면이 오류 안내를 가리지 않게)
+function camGate(btn) {   // 앱 안 브라우저면 카메라 고를 때 한 번만 알린다 → false = 이번 누름은 안내만
+  if (!(isInApp() || !navigator.mediaDevices) || inAppWarned) return true;
+  inAppWarned = true; $("inapp").hidden = false; $("inapp").textContent = inAppHow(); $("kakaoOpen").hidden = !/KAKAOTALK/i.test(navigator.userAgent); showChromeOpen("chromeOpen"); $("copyLink").hidden = !androidInApp();
+  btn.textContent = "그래도 여기서 해 보기"; ping("inapp_warn"); return false;
+}
+$("spChal").onclick = async () => {
+  if (!camGate($("spChal"))) return;
+  unlockMedia(); $("splash").hidden = true; $("spVid").pause(); ping("ch_open");
+  if (!ready) { if (!loadFail) document.body.classList.add("loading"); setStage("준비 중… 잠깐만요"); while (!ready) await sleep(100); document.body.classList.remove("loading"); }
+  chSpeed = 1; challenge();
+};
+$("spGo").onclick = () => {
+  if (!camGate($("spGo"))) return;
+  if (guided && ready) { $("splash").hidden = true; $("spVid").pause(); ping("open_go"); $("start").onclick(); return; }   // 다시 온 사람은 바로 시작
+  openGuide();
+};
+$("spGuide").onclick = openGuide;
+// 첫 화면 «안무 먼저 보기» — 카메라 없이 선생님 영상만 소리 켜고 본다 · 신청 링크 코드 bogi_
+const peekVid = $("peekVid");
+$("spPeek").onclick = () => {
+  $("splash").hidden = true; $("spVid").pause(); $("peek").hidden = false;
+  peekVid.currentTime = Math.max(0, (steps[0] ? steps[0].start : 0) - 0.3); peekVid.muted = false; peekVid.play().catch(() => {}); ping("peek");
+};
+peekVid.addEventListener("ended", () => ping("peek_end"));
+const spPlay = () => { if (!RM) $("spVid").play().catch(() => {}); };   // 첫 화면 배경 영상 다시 틀기(표시) · «움직임 줄이기»면 안 튼다
+if (RM) { const v = $("spVid"); v.removeAttribute("autoplay"); v.pause(); }
+const peekClose = () => { peekVid.pause(); $("peek").hidden = true; $("splash").hidden = false; spPlay(); };
+$("pkBack").onclick = peekClose;
+// 난이도(쉬움·표준·어려움) — 숨은 select(thr) 값을 바꾼다
+const thrSync = () => $("thrSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === $("thr").value));
+$("thrSeg").onclick = (e) => { const v = e.target?.dataset?.v; if (!v || running) return; $("thr").value = v; $("thr").dispatchEvent(new Event("change")); thrSync(); ping("thr", v); };
+thrSync();
+// 코스 고르기 · 챌린지 길이 표시 · 나예 인사
+const lessonMark = (k) => { try { const key = (DEV || DEMO ? "glink_done_dev" : "glink_done") + "_" + k + "2", a = JSON.parse(localStorage.getItem(key) || "[]"), n = Array.isArray(a) ? a.length : 0;   // 읽기만 · 새로 저장하지 않는다
+  return (localStorage.getItem(key + "_ch") === "1" ? " 🔥" : "") + (n ? ` ✓${n}` : ""); } catch { return ""; } };
+$("lessonRow").innerHTML = Object.entries(LESSONS).map(([k, l]) => `<button data-l="${k}" class="${k === COURSE ? "on" : ""}">${l.title}<small>${l.sub} · ${l.secs}초${lessonMark(k)}</small></button>`).join("");
+$("lessonRow").onclick = (e) => { const k = e.target?.closest?.("[data-l]")?.dataset?.l; if (k) setCourse(k); };
+{ const on = $("lessonRow").querySelector(".on"); if (on) $("lessonRow").scrollLeft = Math.max(0, on.offsetLeft - 20); }
+$("spTitle").innerHTML = `${CS.title}<br><span>${CS.sub} 따라 추기</span>`;
+$("spBrand").textContent = "GLINK DANCE CLASS · NAYE";
+if (Object.keys(LESSONS).length < 2) document.body.classList.add("one");   // 곡이 하나면 «곡 고르기» 줄을 숨긴다
+if (SONG) document.body.classList.add("deep");                              // 딥링크로 온 손님: 챌린지 버튼만 크게
+$("lockClose").onclick = () => { $("lockbox").hidden = true; ping("lock_close"); };
+$("tip").onclick = () => $("tip").classList.toggle("open");   // 낮은 화면에서 두 줄로 접힌 주의점을 눌러 펼친다(표시)
+let hwWas = null, hwJust = false;   // 표시용: 숙제가 «방금» 끝났는지
+const drawHw = () => { const ok = hwDone();
+  const prog = !ok && !CS.hw.ch && CS.hw.need > 1 ? ` · ${[...Array(CS.hw.need).keys()].filter(i => done.has(i)).length}/${CS.hw.need}` : "";
+  const t = ok ? `✅ 숙제 완료! · ${CS.hw.text}` : `📝 클래스 숙제 · ${CS.hw.text}${prog}`;
+  if (SALE) { $("spHw").hidden = true; $("hw").hidden = true; }
+  $("spHw").textContent = t; $("hw").textContent = t; $("spHw").classList.toggle("ok", ok); $("hw").classList.toggle("ok", ok);
+  if (hwWas === false && ok) { hwJust = true; $("hw").classList.add("new"); $("spHw").classList.add("new"); pingOnce("hw_done", `${CLS || "-"}_${COURSE}`); }
+  hwWas = ok; };
+document.querySelectorAll(".chn").forEach(e => { e.textContent = CH_NAME; });
+try { if (localStorage.getItem(STORE + "_ch") === "1") { const sm = $("spChal").querySelector("small"); if (sm) sm.textContent = "한 번 더! 이번엔 등급 올리기 🔥"; } } catch {}   // 해 본 사람에게는 다음 목표(읽기만)
+document.querySelectorAll(".chs").forEach(e => { e.textContent = CS.secs; });
+$("spHello").onclick = () => { $("spVid").pause(); nayeSay("hello", 9000).then(() => { if (!$("splash").hidden) spPlay(); }); };
+$("pkCam").onclick = () => { peekClose(); ping("peek_cam"); $("spGo").onclick(); };
+$("pkChal").onclick = () => { peekClose(); ping("peek_chal"); $("spChal").onclick(); };
+$("go").onclick = () => {   // 같은 누름으로 소리·카메라 허락까지
+  $("guide").hidden = true; guided = true; try { localStorage.setItem("glink_guided", "1"); } catch {}
+  ping("open_go"); $("start").onclick();
+};
+$("start").onclick = () => {
+  if (!ready) return;
+  if (running) { endRun("멈췄어요. 아래 노란 버튼을 누르면 이 스텝부터 다시 해요."); return; }
+  if (cur >= plan.length) { cur = frontier(); if (cur >= plan.length) { done.clear(); saveDone(); cur = 0; } }
+  unlockMedia(); beep(false); run();
+};
+$("stopFab").onclick = () => { ping("stop", plan[cur]?.label || ""); endRun("멈췄어요. 아래 노란 버튼을 누르면 이 스텝부터 다시 해요."); };
+$("reset").onclick = () => { if (running) return; askReset = true; $("confirmTitle").textContent = "진행 기록을 지울까요?"; $("confirmText").textContent = "스텝 1부터 다시 시작해요. 지운 기록은 되돌릴 수 없어요."; $("cYes").textContent = "지우기"; $("confirm").hidden = false; };
+let askReset = false;
+// 스텝 칸: 끝낸 칸·다음 칸은 거기서 시작, 잠긴 칸은 «바로 시험 보기» 확인 후 (대표 결정 11-02 «1»)
+let pendingTest = null;
+$("steps").onclick = (e) => {
+  const i = e.target?.closest?.("[data-i]")?.dataset?.i; if (i == null || running || !ready) return;
+  const k = +i;
+  if (paidItem(k)) { openLock("step"); return; }
+  if (k <= frontier()) { cur = k; drawSteps(); setStartLabel(); return; }
+  pendingTest = k; $("confirmTitle").textContent = "🔒 아직 잠긴 칸이에요"; $("cYes").textContent = "바로 도전"; $("confirmText").textContent = `앞 스텝을 통과하면 열려요. 자신 있으면 «${plan[k].label}»까지 원래 속도로 한 번에 도전해 봐요. 맞히면 여기까지 한꺼번에 열려요.`; $("confirm").hidden = false;
+};
+$("cNo").onclick = () => { $("confirm").hidden = true; pendingTest = null; askReset = false; };
+$("cYes").onclick = () => { $("confirm").hidden = true;
+  if (askReset) { askReset = false; done.clear(); saveDone(); cur = 0; setStartLabel(); drawSteps(); msg("진행 기록을 지웠어요. 스텝 1부터 시작해요."); return; }
+  if (pendingTest == null) return; const k = pendingTest; pendingTest = null; unlockMedia(); beep(false); testOut(k); };
+$("skip").onclick = () => { if (running) skipNow = true; else if (cur < plan.length - 1) { cur++; drawSteps(); setStartLabel(); } };
+$("src").onchange = () => { if (!running) return; setSource(); };
+// 화면이 꺼지거나 다른 앱으로 가면 멈춘다(돌아와서 «이어서»)
+document.addEventListener("visibilitychange", () => { if (document.hidden && running && !DEV && !DEMO && $("savebox").hidden) endRun("화면을 벗어나서 멈췄어요. 아래 노란 버튼을 누르면 다시 해요."); });
+
+// ── 시작 준비 ───────────────────────────────────────────────────────
+async function init() {
+  if (isInApp() || !navigator.mediaDevices) {   // 어느 앱 안에서 열었나만 센다(경고는 카메라를 고를 때)
+    const ua = navigator.userAgent;
+    ping("inapp", /Instagram/i.test(ua) ? "ig" : /FBAN|FBAV/i.test(ua) ? "fb" : /KAKAOTALK/i.test(ua) ? "kakao" : /NAVER/i.test(ua) ? "naver" : isInApp() ? "other" : "noapi");
+  }
+  teacher.src = teacherSrc = CS.video; peekVid.src = CS.video;
+  teacher.addEventListener("error", () => { if (teacherSrc === CS.video) errOnce("load"); }, { once: true });   // 선생님 영상을 못 받음(S0-08)
+  const getJson = (u) => fetch(u, { cache: initTry ? "reload" : "default" }).then(r => { if (!r.ok) throw Object.assign(new Error(`불러오기 ${r.status}`), { kind: "load" }); return r.json(); })
+    .catch(e => { throw Object.assign(e, { kind: e.kind || "load" }); });   // 정답지 · 스텝 파일을 못 받거나 깨짐 = err/load
+  const [pj, sj] = await Promise.all([getJson(CS.pose), getJson("steps.json")]);
+  teacherFrames = pj.frames; fps = pj.fps; steps = CS.steps || sj.steps.filter(st => st.n >= CS.from); BPM = CS.bpm || sj.bpm || 130; plan = buildPlan();
+  if (DEMO_HEART) plan = [{ from: 4, to: 4, label: "하트" }];
+  else if (DEMO) plan = [{ from: 6, to: 7, label: "7~8" }, { from: 4, to: 7, label: "전체" }];
+  if (DEMO) { $("src").value = "test-blonde"; done.clear(); }
+  const loadPose = (async () => {
+    const vision = await FilesetResolver.forVisionTasks("./vendor/wasm");
+    const mk = (delegate) => PoseLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: "pose_lite.task", delegate }, runningMode: "VIDEO", numPoses: 1, outputSegmentationMasks: true });
+    try { return await mk("GPU"); } catch { try { return await mk("CPU"); } catch (e) { throw Object.assign(e, { kind: "model" }); } }   // 둘 다 안 되면 err/model
+  })();
+  await waitMeta(teacher, 4000);   // 저전력 모드에선 안 올 수 있다 → 기본 크기로 시작하고 나중에 고친다
+  teacher.addEventListener("loadedmetadata", () => { tCan.width = teacher.videoWidth; tCan.height = teacher.videoHeight; layout = null; }, { once: true });
+  const tasp = teacher.videoWidth ? teacher.videoWidth / teacher.videoHeight : 540 / 860;
+  allTeacherSub = teacherFrames.filter((f, i) => f && i % 6 === 0).map(f => angles(f, tasp));
+  tCan.width = teacher.videoWidth || 540; tCan.height = teacher.videoHeight || 860;
+  cur = Math.min(frontier(), plan.length - 1);   // 다시 온 사람은 끝낸 다음 칸부터
+  drawSteps();
+  $("eta").textContent = `⏱ 한 스텝 약 2분 · 전체 약 ${estimateMinutes()}분 · 진행은 이 폰에 남아요`;
+  pose = await loadPose;
+  ready = true; setStartLabel();
+  $("go").disabled = false; $("go").textContent = "카메라 켜고 시작";
+  msg(done.size ? "이어서 할 수 있어요. 스텝 칸을 눌러 고를 수도 있어요." : "노란 버튼을 누르면 카메라가 켜지고 스텝 1부터 시작해요.");
+  if (DEMO) { $("splash").hidden = true; $("guide").hidden = true; }
+  if (CLS) pingOnce("class_open", CLS);   // 클래스 입장(S0-07)
+  if (SWITCHED) ping("course", COURSE); else ping("visit", visitNo >= 6 ? "6+" : String(visitNo));   // 이 폰에서 몇 번째 방문인가(들어오는 횟수)
+  if (guided) { $("spGuide").hidden = false; if (!inAppWarned) $("spGo").textContent = done.size ? "이어서 배우기" : `스텝 ${SALE.free} 무료로 배우기`; }
+  requestAnimationFrame(loop);
+}
+// 불러오기 실패 → «다시 시도»(S0-13): 새로고침 없이 init 만 다시 돈다(첫 시도는 visit 사건 전에 멈췄으므로 두 번 세지 않는다)
+const onInitFail = (e) => { errOnce(e.kind || "init"); loadFail = true; document.body.classList.remove("loading");
+  msg("불러오기에 실패했어요. «다시 시도»를 눌러 주세요."); $("go").textContent = "불러오기 실패 · 다시 시도해 주세요";
+  $("loadErrText").textContent = e.kind === "model" ? "동작 인식 모델을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요." : "영상이나 안무 정보를 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+  $("loadErr").hidden = false; console.error(e); };
+let initTry = 0;   // 다시 시도 때는 캐시를 건너뛰고 새로 받는다
+$("retryBtn").onclick = () => { initTry++; $("loadErr").hidden = true; loadFail = false; msg("다시 불러오는 중…"); ping("retry"); init().catch(onInitFail); };
+init().catch(onInitFail);
+// 처음 화면으로(11-11) — 안내·조작판에서 곡을 바꾸거나 챌린지로 돌아갈 길
+const goHome = () => { if (running) return; $("guide").hidden = true; $("splash").hidden = false; spPlay(); };
+$("homeBtn").onclick = goHome; $("gdHome").onclick = goHome;
+// ── 안드로이드 «뒤로»(S0-14) ── 깊은 화면에 들어가면 기록 한 칸(덫)을 깔고, 뒤로가 오면 앞 화면으로 한 걸음 돌아간 뒤
+// 아직 첫 화면이 아니면 덫을 다시 깐다. 첫 화면에서 뒤로는 그대로 페이지를 떠난다(덫이 없어서). 화면 안 버튼으로 닫아도 덫은 하나뿐이라 꼬이지 않는다.
+let backTrap = false;
+const vis = (id) => { const e = $(id); return !!e && !e.hidden; };
+const atHome = () => !running && !$("splash").hidden && !vis("guide") && !vis("peek") && !vis("savebox") && !vis("fail");
+const arm = () => { if (backTrap || atHome() || DEMO) return; try { history.pushState({ glinkBack: 1 }, ""); backTrap = true; } catch {} };
+function goBack() {
+  if (vis("savebox")) { $("nextBtn").click(); return "savebox"; }               // 결과 → 닫기(앞 화면)
+  if (running) { endRun("연습을 멈췄어요."); goHome(); return "stop"; }        // 연습 중 → 멈추고 레슨 홈
+  if (vis("fail")) { $("fail").hidden = true; return "fail"; }
+  if (vis("peek")) { peekClose(); return "peek"; }
+  if (vis("guide")) { if (gdI > 0) gdGo(gdI - 1); else goHome(); return "guide"; }
+  if ($("splash").hidden) { goHome(); return "panel"; }                         // 조작판 → 레슨 홈
+  return "";
+}
+window.addEventListener("popstate", () => { backTrap = false; const w = goBack(); if (w) ev("back", { w }); setTimeout(arm, 0); });
+new MutationObserver(() => setTimeout(arm, 0)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
