@@ -22,8 +22,8 @@ const SALE = {
   refund: "결제 후 7일 안에 잠긴 스텝을 하나도 열지 않았다면 전액 환불해 드려요.",   // 대표 확정 11-23
   peek: "peek_duo.mp4?v=1",
   // 1부/2부 (대표 11-23 «1번») — 지금 판 = 1부(후렴) · 2부는 NAYE 새 촬영 뒤 · 묶음 ₩9,900 예정
-  nextKR: "지금 배우는 건 1부(후렴)예요. 2부(앞부분 안무)는 곧 공개 · 1부+2부 함께 ₩9,900 예정",
-  nextGL: "This is Part 1 (chorus). Part 2 (the opening part) is coming soon.",                 // «안무 먼저 보기» = 온혁 × 세이 댄스 쇼츠(최종 v3 · 웹 1080p) · 채점 정답지는 나예 영상 그대로
+  nextKR: "지금 배우는 건 1부(후렴)예요. 2부는 곧 공개 · 1부+2부 함께 ₩9,900 예정",
+  nextGL: "This is Part 1 (chorus). Part 2 is coming soon.",                 // «안무 먼저 보기» = 온혁 × 세이 댄스 쇼츠(최종 v3 · 웹 1080p) · 채점 정답지는 나예 영상 그대로
   tag: "Choreography @l_r.lk0",              // 저장 영상 공유 글에 붙는 안무가 태그(대표 11-23 «태그만»)
 };
 const SONGS = { bedgalaxy: "bed" };          // 딥링크 ?song=<이름> → 레슨 id
@@ -94,7 +94,7 @@ const GC = "crossnam";   // 통계(GoatCounter) 코드 · 비우면 아무것도
 // 통계 스위치(S0-05 · 지표 사전 «클래스 경로»): 서비스 주소(kiserama.com/glink-practice/)는 예전처럼 보낸다.
 // 그 밖(시험 주소 · 내 컴퓨터)은 STATS_ON_TEST 가 켜져 있고 링크에 클래스 코드(?c=)가 있을 때만 보낸다. c 가 있으면 경로가 /c/<c>/<레슨>/e/… 로 갈린다.
 const STATS_ON_TEST = false;   // 켜는 것은 결정 대장 D2 답 + 방침 문구 승인 뒤(백로그 S0-35) · 배포 스크립트가 false 인지 확인한다
-const APP_VER = "s2";          // 통계 «제목(t)»에 싣는 앱 판 번호 = index.html 의 app.js?v= 와 같게
+const APP_VER = "s3";          // 통계 «제목(t)»에 싣는 앱 판 번호 = index.html 의 app.js?v= 와 같게
 const codeOf = (k) => { const v = (Q.get(k) || "").toLowerCase(); return /^[a-z0-9_]{1,20}$/.test(v) ? v : ""; };   // 소문자 · 숫자 · 밑줄 20자
 const CLS = codeOf("c"), CHN = codeOf("ch");   // 클래스 코드 · 링크를 뿌린 곳(kakao 등)
 const IS_PROD = location.hostname === "kiserama.com" && location.pathname.startsWith(`/${SALE.path}/`);
